@@ -102,8 +102,8 @@ jobs:
                   applicationId 'com.workoutapp.app'
                   minSdk 26
                   targetSdk 34
-                  versionCode 8
-                  versionName '4.3'
+                  versionCode 9
+                  versionName '4.4'
               }
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_17
@@ -320,6 +320,7 @@ jobs:
 
           import android.app.Activity
           import android.content.Intent
+          import android.net.Uri
           import android.webkit.JavascriptInterface
           import androidx.health.connect.client.HealthConnectClient
           import androidx.health.connect.client.PermissionController
@@ -365,6 +366,20 @@ jobs:
                       }
                   } catch (e: Exception) {
                       "unavailable"
+                  }
+              }
+
+              @JavascriptInterface
+              fun openHealthStore() {
+                  try {
+                      val market = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.google.android.apps.healthdata"))
+                      activity.startActivity(market)
+                  } catch (e: Exception) {
+                      try {
+                          val web = Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata"))
+                          activity.startActivity(web)
+                      } catch (e2: Exception) {
+                      }
                   }
               }
 
