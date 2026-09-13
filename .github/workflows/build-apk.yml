@@ -102,8 +102,8 @@ jobs:
                   applicationId 'com.workoutapp.app'
                   minSdk 26
                   targetSdk 34
-                  versionCode 15
-                  versionName '5.0'
+                  versionCode 16
+                  versionName '5.1'
               }
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_17
@@ -114,14 +114,14 @@ jobs:
               }
           }
           dependencies {
-              implementation("androidx.health.connect:connect-client:1.2.0-alpha06") {
+              implementation("androidx.health.connect:connect-client:1.1.0") {
                   exclude group: "androidx.health.connect", module: "connect-client-proto"
                   exclude group: "androidx.health.connect", module: "connect-client-external-protobuf"
               }
               // Vendored (see copy step above): these two modules fail Maven
               // resolution on the CI runner, so they are bundled as files.
-              implementation(files("libs/connect-client-proto-1.2.0-alpha06.jar"))
-              implementation(files("libs/connect-client-external-protobuf-1.2.0-alpha06.jar"))
+              implementation(files("libs/connect-client-proto-1.1.0.jar"))
+              implementation(files("libs/connect-client-external-protobuf-1.1.0.jar"))
               implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1"
           }
           EOF
@@ -133,6 +133,9 @@ jobs:
               <uses-permission android:name="android.permission.health.WRITE_EXERCISE"/>
               <queries>
                   <package android:name="com.google.android.apps.healthdata" />
+                  <intent>
+                      <action android:name="androidx.health.ACTION_REQUEST_PERMISSIONS" />
+                  </intent>
               </queries>
               <application
                   android:label="Lynxos Gym"
@@ -445,19 +448,40 @@ jobs:
                           toast("Health Connect is not available on this phone.")
                           "not-available"
                       } else {
-                          val intent: Intent = permissionContract.createIntent(activity, PERMISSIONS)
-                          lastIntentDiag = "action=" + intent.action + " pkg=" + intent.`package` +
-                              " extras=" + (intent.extras?.keySet()?.joinToString(",") ?: "none")
-                          lastRequestTimeMs = System.currentTimeMillis()
-                          activity.runOnUiThread {
-                              try {
-                                  activity.startActivityForResult(intent, REQUEST_CODE)
-                              } catch (e: Exception) {
-                                  toast("Could not open Health Connect: " + (e.message ?: e.javaClass.simpleName))
+                          val explicitIntent: Intent = permissionContract.createIntent(activity, PERMISSIONS)
+                          val pm = activity.packageManager
+                          // Diagnostic: which components actually handle this intent?
+                          val explicitMatches = pm.queryIntentActivities(explicitIntent, 0)
+                          val implicitIntent = Intent(explicitIntent).apply { `package` = null }
+                          val implicitMatches = pm.queryIntentActivities(implicitIntent, 0)
+                          fun describe(list: List<android.content.pm.ResolveInfo>): String {
+                              if (list.isEmpty()) return "none"
+                              return list.joinToString(";") {
+                                  it.activityInfo.packageName + "/" + it.activityInfo.name.substringAfterLast('.')
                               }
                           }
-                          toast("Opening Health Connect...")
-                          "launched"
+                          val diag = "HC handlers: with-package=" + describe(explicitMatches) +
+                              ". Without-package=" + describe(implicitMatches)
+                          lastIntentDiag = diag
+                          toast(diag)
+                          // Prefer the explicit provider target; fall back to implicit
+                          // resolution if the provider package handles nothing.
+                          val sendIntent = if (explicitMatches.isNotEmpty()) explicitIntent else implicitIntent
+                          if (explicitMatches.isEmpty() && implicitMatches.isEmpty()) {
+                              toast("No app on this phone can show the Health Connect permission screen.")
+                              "no-handler"
+                          } else {
+                              lastRequestTimeMs = System.currentTimeMillis()
+                              activity.runOnUiThread {
+                                  try {
+                                      activity.startActivityForResult(sendIntent, REQUEST_CODE)
+                                      toast("Opening Health Connect...")
+                                  } catch (e: Exception) {
+                                      toast("Could not open Health Connect: " + (e.message ?: e.javaClass.simpleName))
+                                  }
+                              }
+                              "launched"
+                          }
                       }
                   } catch (e: Exception) {
                       val msg = "Permission request failed: " + (e.message ?: e.javaClass.simpleName)
