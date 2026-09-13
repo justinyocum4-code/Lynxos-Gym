@@ -2392,7 +2392,7 @@
       sessionPaused: false, pausedPhaseLabel: "", pausedTimerLabel: "", pausedActionDisabled: false, pausedVoiceCommands: false, quitWasAutoPaused: false, savedSession: null,
       restDuration: 120, workoutStartedAt: null, lastWorkoutSummary: "",
       profileName: "", profileImageUrl: "",
-      voiceCoachEnabled: "speechSynthesis" in window && "SpeechSynthesisUtterance" in window, voiceSpeechTimeout: null, units: "imperial",
+      voiceCoachEnabled: voiceCoachSupported(), voiceSpeechTimeout: null, units: "imperial",
       musicEnabled: false, musicVolume: .2, musicDucked: false, musicDuckTimer: null,
       audioContext: null, musicMaster: null, musicInterval: null, musicStep: 0,
       voiceCommandsEnabled: false, recognition: null, recognitionRestart: false,
@@ -2410,6 +2410,32 @@
     const LYNXOS_STORE_KEY = "lynxosGymState.v1";
     let persistTimerId = null;
     let lastPersistSnapshot = "";
+
+    // ---- Native Android bridges (LynxosStore / LynxosTts), with web fallbacks ----
+    function nativeBridgeObject(name) {
+      try {
+        const bridge = window[name];
+        if (bridge && (typeof bridge === "object" || typeof bridge === "function")) return bridge;
+      } catch (error) {}
+      return null;
+    }
+    function nativeTtsBridge() {
+      const bridge = nativeBridgeObject("LynxosTts");
+      return bridge && typeof bridge.speak === "function" ? bridge : null;
+    }
+    function nativeStoreBridge() {
+      const bridge = nativeBridgeObject("LynxosStore");
+      return bridge && typeof bridge.getItem === "function" && typeof bridge.setItem === "function" ? bridge : null;
+    }
+    function webSpeechSupported() {
+      return "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
+    }
+    function voiceCoachSupported() {
+      return Boolean(nativeTtsBridge()) || webSpeechSupported();
+    }
+    function appStorage() {
+      return nativeStoreBridge() || window.localStorage;
+    }
 
     function serializeProgramRecord(record) {
       return {
@@ -2452,7 +2478,7 @@
       try {
         const snapshot = JSON.stringify(persistableState());
         lastPersistSnapshot = snapshot;
-        localStorage.setItem(LYNXOS_STORE_KEY, snapshot);
+        appStorage().setItem(LYNXOS_STORE_KEY, snapshot);
       } catch (error) { /* storage unavailable or full; app keeps working in memory */ }
     }
 
@@ -2475,7 +2501,7 @@
 
     function restoreAppState() {
       let raw = null;
-      try { raw = localStorage.getItem(LYNXOS_STORE_KEY); } catch (error) { return false; }
+      try { raw = appStorage().getItem(LYNXOS_STORE_KEY); } catch (error) { return false; }
       if (!raw) return false;
       let data;
       try { data = JSON.parse(raw); } catch (error) { return false; }
@@ -4352,15 +4378,26 @@
     function cancelCoachSpeech() {
       clearTimeout(state.voiceSpeechTimeout);
       state.voiceSpeechTimeout = null;
-      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      const nativeTts = nativeTtsBridge();
+      if (nativeTts) { try { nativeTts.stop(); } catch (error) {} }
+      else if (webSpeechSupported()) { try { window.speechSynthesis.cancel(); } catch (error) {} }
       state.musicDucked = false;
       syncWorkoutMusic();
     }
 
     function speakCoach(message, delay = 0) {
-      if (!state.voiceCoachEnabled || !("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) return;
+      if (!state.voiceCoachEnabled || !voiceCoachSupported()) return;
       cancelCoachSpeech();
       const deliver = () => {
+        const nativeTts = nativeTtsBridge();
+        if (nativeTts) {
+          if (state.recognition && state.voiceCommandsEnabled) {
+            state.recognitionRestart = true;
+            try { state.recognition.stop(); } catch (_) {}
+          }
+          try { nativeTts.speak(String(message)); } catch (error) {}
+          return;
+        }
         const utterance = new SpeechSynthesisUtterance(message);
         utterance.rate = .96;
         utterance.pitch = 1;
@@ -4506,7 +4543,7 @@
     }
 
     function syncVoiceCoachMode(announce = false) {
-      const supported = "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
+      const supported = voiceCoachSupported();
       const toggles = [document.getElementById("voice-coach-toggle"), document.getElementById("profile-voice-toggle")].filter(Boolean);
       const live = document.getElementById("timer-live");
       const progress = document.getElementById("player-progress");
@@ -4515,19 +4552,19 @@
         toggle.disabled = !supported;
         toggle.setAttribute("aria-pressed", String(state.voiceCoachEnabled));
         toggle.setAttribute("aria-label", !supported
-          ? "Voice coach is unavailable in this browser"
+          ? "Voice coach is unavailable on this device"
           : state.voiceCoachEnabled
             ? "Voice coach is on. Double tap to turn it off"
             : "Voice coach is off. Double tap to turn it on");
         toggle.textContent = state.voiceCoachEnabled ? "On" : "Off";
       });
       document.getElementById("voice-coach-help").textContent = !supported
-        ? "Spoken coaching is unavailable in this browser. Screen-reader announcements stay active."
+        ? "Spoken coaching is unavailable on this device. Screen-reader announcements stay active."
         : state.voiceCoachEnabled
           ? "Spoken cues are on. Screen-reader timer announcements are paused."
           : "Spoken cues are off. Screen-reader timer announcements are active.";
       document.getElementById("profile-voice-help").textContent = !supported
-        ? "Spoken coaching is unavailable in this browser."
+        ? "Spoken coaching is unavailable on this device."
         : state.voiceCoachEnabled
           ? "Spoken cues are on during guided workouts."
           : "Spoken cues are off during guided workouts.";
@@ -4546,7 +4583,7 @@
     }
 
     function toggleVoiceCoach() {
-      if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) return;
+      if (!voiceCoachSupported()) return;
       state.voiceCoachEnabled = !state.voiceCoachEnabled;
       syncVoiceCoachMode(true);
     }
@@ -4651,7 +4688,7 @@
       state.workoutStartedAt = Number(snapshot.workoutStartedAt) || Date.now();
       state.musicEnabled = Boolean(snapshot.musicEnabled);
       state.musicVolume = Math.max(0, Math.min(1, Number(snapshot.musicVolume) || .2));
-      state.voiceCoachEnabled = Boolean(snapshot.voiceCoachEnabled) && "speechSynthesis" in window;
+      state.voiceCoachEnabled = Boolean(snapshot.voiceCoachEnabled) && voiceCoachSupported();
       state.pausedVoiceCommands = Boolean(snapshot.voiceCommandsEnabled);
       const validPains = new Set(Object.keys(painNames));
       state.sessionPain = new Set(Array.isArray(snapshot.sessionPain) ? snapshot.sessionPain.filter(item => validPains.has(item)) : []);
