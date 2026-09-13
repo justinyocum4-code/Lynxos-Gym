@@ -102,8 +102,8 @@ jobs:
                   applicationId 'com.workoutapp.app'
                   minSdk 26
                   targetSdk 34
-                  versionCode 11
-                  versionName '4.6'
+                  versionCode 13
+                  versionName '4.8'
               }
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_17
@@ -144,6 +144,10 @@ jobs:
                           <action android:name="android.intent.action.MAIN" />
                           <category android:name="android.intent.category.LAUNCHER" />
                       </intent-filter>
+                      <intent-filter>
+                          <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+                          <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+                      </intent-filter>
                   </activity>
               </application>
           </manifest>
@@ -162,6 +166,7 @@ jobs:
           import android.webkit.WebChromeClient;
           import android.webkit.WebView;
           import android.webkit.WebViewClient;
+          import android.widget.Toast;
           import java.util.Locale;
 
           public class MainActivity extends Activity {
@@ -272,6 +277,8 @@ jobs:
                   super.onActivityResult(requestCode, resultCode, data);
                   if (requestCode == LynxosHealth.REQUEST_CODE) {
                       try {
+                          long secs = (System.currentTimeMillis() - LynxosHealth.Companion.getLastRequestTimeMs()) / 1000;
+                          Toast.makeText(this, "Health Connect answered: result=" + resultCode + " after " + secs + " seconds", Toast.LENGTH_LONG).show();
                           webView.evaluateJavascript("window.dispatchEvent(new Event('lynxos-health-result'))", null);
                       } catch (Exception ignored) {}
                   }
@@ -341,6 +348,7 @@ jobs:
           class LynxosHealth(private val activity: Activity) {
               companion object {
                   const val REQUEST_CODE = 1002
+                  var lastRequestTimeMs: Long = 0L
                   val PERMISSIONS: Set<String> = setOf(
                       HealthPermission.getReadPermission(ExerciseSessionRecord::class),
                       HealthPermission.getWritePermission(ExerciseSessionRecord::class)
@@ -418,6 +426,7 @@ jobs:
                           "not-available"
                       } else {
                           val intent: Intent = permissionContract.createIntent(activity, PERMISSIONS)
+                          lastRequestTimeMs = System.currentTimeMillis()
                           activity.runOnUiThread {
                               try {
                                   activity.startActivityForResult(intent, REQUEST_CODE)
