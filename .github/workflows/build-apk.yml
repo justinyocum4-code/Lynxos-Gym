@@ -102,8 +102,8 @@ jobs:
                   applicationId 'com.workoutapp.app'
                   minSdk 26
                   targetSdk 34
-                  versionCode 9
-                  versionName '4.4'
+                  versionCode 10
+                  versionName '4.5'
               }
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_17
@@ -131,6 +131,9 @@ jobs:
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.health.READ_EXERCISE"/>
               <uses-permission android:name="android.permission.health.WRITE_EXERCISE"/>
+              <queries>
+                  <package android:name="com.google.android.apps.healthdata" />
+              </queries>
               <application
                   android:label="Lynxos Gym"
                   android:theme="@android:style/Theme.Material.Light.NoActionBar">
