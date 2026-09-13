@@ -102,8 +102,8 @@ jobs:
                   applicationId 'com.workoutapp.app'
                   minSdk 26
                   targetSdk 34
-                  versionCode 18
-                  versionName '5.3'
+                  versionCode 19
+                  versionName '5.4'
               }
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_17
@@ -494,6 +494,32 @@ jobs:
                       val msg = "Diagnostic failed: " + (e.message ?: e.javaClass.simpleName)
                       toast(msg)
                       msg
+                  }
+              }
+
+              @JavascriptInterface
+              fun openHealthConnectApp(): String {
+                  return try {
+                      val pm = activity.packageManager
+                      val launchIntent = pm.getLaunchIntentForPackage("com.google.android.apps.healthdata")
+                      if (launchIntent != null) {
+                          activity.runOnUiThread {
+                              try {
+                                  activity.startActivity(launchIntent)
+                                  toast("Opening Health Connect app...")
+                              } catch (e: Exception) {
+                                  toast("Could not open HC app: " + (e.message ?: e.javaClass.simpleName))
+                              }
+                          }
+                          "opened"
+                      } else {
+                          toast("Health Connect app has no launcher.")
+                          "no-launcher"
+                      }
+                  } catch (e: Exception) {
+                      val msg = "Failed: " + (e.message ?: e.javaClass.simpleName)
+                      toast(msg)
+                      "failed"
                   }
               }
 
