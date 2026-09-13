@@ -1939,6 +1939,10 @@
           <button class="secondary tool-launcher" type="button" id="open-one-rep-calculator">Open 1-rep max calculator</button>
         </div>
       </section>
+      <section aria-labelledby="app-info-title">
+        <h3 id="app-info-title">App info</h3>
+        <dl class="profile-details" id="app-info"></dl>
+      </section>
       <div class="profile-actions">
         <button class="primary" type="button" id="save-profile">Save profile</button>
         <button class="secondary share-app" type="button" aria-label="Share Lynxos Gym with another person" aria-describedby="profile-save-status">Share this app</button>
@@ -2435,6 +2439,17 @@
     }
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
+    }
+    const LYNXOS_APP_VERSION = "4.1";
+    function renderAppInfo() {
+      const box = document.getElementById("app-info");
+      if (!box) return;
+      const rows = [
+        ["App version", LYNXOS_APP_VERSION],
+        ["Storage", nativeStoreBridge() ? "Phone storage" : "Web storage"],
+        ["Voice coach", nativeTtsBridge() ? "Phone voice" : (webSpeechSupported() ? "Browser voice" : "Unavailable")]
+      ];
+      box.innerHTML = rows.map(([label, value]) => `<div><dt>${escapeText(label)}</dt><dd>${escapeText(value)}</dd></div>`).join("");
     }
 
     function serializeProgramRecord(record) {
@@ -3314,6 +3329,7 @@
       });
       syncRestControls();
       syncVoiceCoachMode(false);
+      renderAppInfo();
     }
 
     function renderProfileAvatar() {
