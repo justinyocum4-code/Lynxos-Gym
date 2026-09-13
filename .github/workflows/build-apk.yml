@@ -104,8 +104,8 @@ jobs:
           }
           dependencies {
               implementation("androidx.health.connect:connect-client:1.1.0") {
-                  exclude(group = "androidx.health.connect", module = "connect-client-proto")
-                  exclude(group = "androidx.health.connect", module = "connect-client-external-protobuf")
+                  exclude group: "androidx.health.connect", module: "connect-client-proto"
+                  exclude group: "androidx.health.connect", module: "connect-client-external-protobuf"
               }
               // Vendored (see copy step above): these two modules fail Maven
               // resolution on the CI runner, so they are bundled as files.
