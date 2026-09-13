@@ -102,8 +102,8 @@ jobs:
                   applicationId 'com.workoutapp.app'
                   minSdk 26
                   targetSdk 34
-                  versionCode 17
-                  versionName '5.2'
+                  versionCode 18
+                  versionName '5.3'
               }
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_17
@@ -446,37 +446,45 @@ jobs:
                   return try {
                       val pm = activity.packageManager
                       val sb = StringBuilder()
-                      // 1. What is DefaultGateway? Dump its intent-filters.
-                      try {
-                          val cn = android.content.ComponentName(
-                              "com.google.android.apps.healthdata",
-                              "com.google.android.apps.healthdata.DefaultGateway")
-                          val ai = pm.getActivityInfo(cn, android.content.pm.PackageManager.GET_META_DATA)
-                          sb.append("DefaultGateway exported=").append(ai.exported)
-                          sb.append(" permission=").append(ai.permission ?: "none")
-                      } catch (e: Exception) {
-                          sb.append("DefaultGateway info failed: ").append(e.javaClass.simpleName)
+                      // 1. Get the FULL class name of DefaultGateway from the ResolveInfo.
+                      val probeIntent = Intent("androidx.health.ACTION_REQUEST_PERMISSIONS").apply {
+                          setPackage("com.google.android.apps.healthdata")
                       }
-                      // 2. Probe candidate actions.
+                      val matches = pm.queryIntentActivities(probeIntent, 0)
+                      var fullName = ""
+                      if (matches.isNotEmpty()) {
+                          fullName = matches[0].activityInfo.name
+                          sb.append("DefaultGateway full class: ").append(fullName)
+                          // 2. Now get ActivityInfo with the CORRECT name.
+                          try {
+                              val cn = android.content.ComponentName(
+                                  "com.google.android.apps.healthdata", fullName)
+                              val ai = pm.getActivityInfo(cn, 0)
+                              sb.append("\nExported=").append(ai.exported)
+                              sb.append(" permission=").append(ai.permission ?: "none")
+                              sb.append(" taskMode=").append(ai.launchMode)
+                          } catch (e: Exception) {
+                              sb.append("\nActivityInfo failed: ").append(e.javaClass.simpleName)
+                          }
+                      } else {
+                          sb.append("No handler found for ACTION_REQUEST_PERMISSIONS")
+                      }
+                      // 3. Probe candidate actions (full names this time).
                       val actions = listOf(
                           "androidx.health.ACTION_REQUEST_PERMISSIONS",
                           "androidx.health.connect.client.HEALTH_PERMISSIONS",
                           "android.health.connect.action.REQUEST_HEALTH_PERMISSIONS",
                           "android.health.connect.action.MANAGE_HEALTH_PERMISSIONS",
-                          "androidx.health.ACTION_SHOW_ONBOARDING",
-                          "androidx.health.connect.action.SHOW_ONBOARDING"
+                          "androidx.health.ACTION_SHOW_ONBOARDING"
                       )
                       for (action in actions) {
                           val intent = Intent(action).apply {
                               setPackage("com.google.android.apps.healthdata")
                           }
-                          val matches = pm.queryIntentActivities(intent, 0)
+                          val m = pm.queryIntentActivities(intent, 0)
                           sb.append("\n").append(action.substringAfterLast('.'))
                               .append(" -> ")
-                              .append(if (matches.isEmpty()) "none"
-                                  else matches.joinToString(";") {
-                                      it.activityInfo.name.substringAfterLast('.')
-                                  })
+                              .append(if (m.isEmpty()) "none" else m[0].activityInfo.name)
                       }
                       val result = sb.toString()
                       lastIntentDiag = result
@@ -486,6 +494,39 @@ jobs:
                       val msg = "Diagnostic failed: " + (e.message ?: e.javaClass.simpleName)
                       toast(msg)
                       msg
+                  }
+              }
+
+              @JavascriptInterface
+              fun tryPermissionVariants(): String {
+                  return try {
+                      if (HealthConnectClient.getSdkStatus(activity) != HealthConnectClient.SDK_AVAILABLE) {
+                          toast("Health Connect is not available.")
+                          return "not-available"
+                      }
+                      val base: Intent = permissionContract.createIntent(activity, PERMISSIONS)
+                      // Variant 1: with NEW_TASK flag via startActivityForResult
+                      val v1 = Intent(base).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+                      // Variant 2: no proto extra, just action+package
+                      val v2 = Intent("androidx.health.ACTION_REQUEST_PERMISSIONS").apply {
+                          setPackage("com.google.android.apps.healthdata")
+                      }
+                      // We'll try v1 first, then v2. Report which was tried.
+                      // For now, try v1 and toast the plan.
+                      lastRequestTimeMs = System.currentTimeMillis()
+                      activity.runOnUiThread {
+                          try {
+                              activity.startActivityForResult(v1, REQUEST_CODE)
+                              toast("Trying variant with NEW_TASK flag...")
+                          } catch (e: Exception) {
+                              toast("Variant failed: " + (e.message ?: e.javaClass.simpleName))
+                          }
+                      }
+                      "variant-sent"
+                  } catch (e: Exception) {
+                      val msg = "Variant failed: " + (e.message ?: e.javaClass.simpleName)
+                      toast(msg)
+                      "failed"
                   }
               }
 
