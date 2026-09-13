@@ -32,18 +32,19 @@ jobs:
         run: |
           echo "=== Files in repo ==="
           ls -la
-          HTML_FILE=./index.html
-          if [ ! -f "$HTML_FILE" ]; then
-            echo "ERROR: index.html was not found in the repository root."
-            echo "Upload index.html to the repository root first (Add file > Upload files), then re-run this workflow."
+          HTML_FILE=""
+          for candidate in ./index.html ./*.html; do
+            if [ -f "$candidate" ] && grep -q 'id="app-info"' "$candidate"; then
+              HTML_FILE="$candidate"
+              break
+            fi
+          done
+          if [ -z "$HTML_FILE" ]; then
+            echo "ERROR: no app HTML file found in the repository root."
+            echo "Upload the newest index.html (Add file > Upload files), then re-run this workflow."
             exit 1
           fi
           echo "Using $HTML_FILE as the app page."
-          if ! grep -q 'id="app-info"' "$HTML_FILE"; then
-            echo "ERROR: $HTML_FILE is not the latest app file (App info section missing)."
-            echo "Upload the newest index.html to the repository root so it replaces the old one, then re-run this workflow."
-            exit 1
-          fi
 
           mkdir -p app/src/main/java/com/workoutapp/app app/src/main/assets/www
 
@@ -85,8 +86,8 @@ jobs:
                   applicationId 'com.workoutapp.app'
                   minSdk 24
                   targetSdk 34
-                  versionCode 6
-                  versionName '4.2'
+                  versionCode 7
+                  versionName '4.1'
               }
           }
           EOF
