@@ -102,8 +102,8 @@ jobs:
                   applicationId 'com.workoutapp.app'
                   minSdk 26
                   targetSdk 34
-                  versionCode 16
-                  versionName '5.1'
+                  versionCode 17
+                  versionName '5.2'
               }
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_17
@@ -438,6 +438,54 @@ jobs:
                       runBlocking { c.permissionController.getGrantedPermissions() }.containsAll(PERMISSIONS)
                   } catch (e: Exception) {
                       false
+                  }
+              }
+
+              @JavascriptInterface
+              fun getProviderDiagnostic(): String {
+                  return try {
+                      val pm = activity.packageManager
+                      val sb = StringBuilder()
+                      // 1. What is DefaultGateway? Dump its intent-filters.
+                      try {
+                          val cn = android.content.ComponentName(
+                              "com.google.android.apps.healthdata",
+                              "com.google.android.apps.healthdata.DefaultGateway")
+                          val ai = pm.getActivityInfo(cn, android.content.pm.PackageManager.GET_META_DATA)
+                          sb.append("DefaultGateway exported=").append(ai.exported)
+                          sb.append(" permission=").append(ai.permission ?: "none")
+                      } catch (e: Exception) {
+                          sb.append("DefaultGateway info failed: ").append(e.javaClass.simpleName)
+                      }
+                      // 2. Probe candidate actions.
+                      val actions = listOf(
+                          "androidx.health.ACTION_REQUEST_PERMISSIONS",
+                          "androidx.health.connect.client.HEALTH_PERMISSIONS",
+                          "android.health.connect.action.REQUEST_HEALTH_PERMISSIONS",
+                          "android.health.connect.action.MANAGE_HEALTH_PERMISSIONS",
+                          "androidx.health.ACTION_SHOW_ONBOARDING",
+                          "androidx.health.connect.action.SHOW_ONBOARDING"
+                      )
+                      for (action in actions) {
+                          val intent = Intent(action).apply {
+                              setPackage("com.google.android.apps.healthdata")
+                          }
+                          val matches = pm.queryIntentActivities(intent, 0)
+                          sb.append("\n").append(action.substringAfterLast('.'))
+                              .append(" -> ")
+                              .append(if (matches.isEmpty()) "none"
+                                  else matches.joinToString(";") {
+                                      it.activityInfo.name.substringAfterLast('.')
+                                  })
+                      }
+                      val result = sb.toString()
+                      lastIntentDiag = result
+                      toast(result)
+                      result
+                  } catch (e: Exception) {
+                      val msg = "Diagnostic failed: " + (e.message ?: e.javaClass.simpleName)
+                      toast(msg)
+                      msg
                   }
               }
 
