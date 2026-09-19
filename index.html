@@ -6,6 +6,7 @@
   <meta name="color-scheme" content="light" />
   <meta name="theme-color" content="#0b1f27" />
   <link rel="icon" href="data:," />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
@@ -2013,6 +2014,14 @@
           </div>
         </div>
       </section>
+      <section aria-labelledby="google-account-title">
+        <h3 id="google-account-title">Google account</h3>
+        <p class="profile-photo-help" id="google-status" role="status">Not signed in. Sign in to save your progress to the cloud and sync your profile.</p>
+        <div class="profile-actions">
+          <button class="secondary" type="button" id="google-signin">Sign in with Google</button>
+          <button class="secondary" type="button" id="google-signout" hidden>Sign out</button>
+        </div>
+      </section>
       <section aria-labelledby="profile-details-title">
         <h3 id="profile-details-title">Fitness profile</h3>
         <dl class="profile-details" id="profile-details"></dl>
@@ -2624,6 +2633,7 @@
     const TOUR_SEEN_KEY = "lynxosGymTour.v1";
     let persistTimerId = null;
     let lastPersistSnapshot = "";
+    let localSavedAt = 0;
 
     // Remember that the user has seen (or skipped) the first-run tour,
     // so reopening the app never drops them back into it.
@@ -2680,7 +2690,7 @@
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.10";
+    const LYNXOS_APP_VERSION = "5.11";
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
       const help = document.getElementById("health-connect-help");
@@ -2824,6 +2834,7 @@
     function persistableState() {
       return {
         v: 1,
+        savedAt: Date.now(),
         profile: state.profile,
         level: state.level, duration: state.duration,
         equipment: [...state.equipment], equipmentDetails: state.equipmentDetails,
@@ -2855,6 +2866,8 @@
         lastPersistSnapshot = snapshot;
         appStorage().setItem(LYNXOS_STORE_KEY, snapshot);
       } catch (error) { /* storage unavailable or full; app keeps working in memory */ }
+      localSavedAt = Date.now();
+      scheduleCloudPush();
     }
 
     function scheduleAppSave() {
@@ -2874,13 +2887,16 @@
       };
     }
 
-    function restoreAppState() {
-      let raw = null;
-      try { raw = appStorage().getItem(LYNXOS_STORE_KEY); } catch (error) { return false; }
+    function restoreAppState(cloudJson) {
+      let raw = cloudJson != null ? cloudJson : null;
+      if (raw == null) {
+        try { raw = appStorage().getItem(LYNXOS_STORE_KEY); } catch (error) { return false; }
+      }
       if (!raw) return false;
       let data;
       try { data = JSON.parse(raw); } catch (error) { return false; }
       if (!data || data.v !== 1 || !data.profile) return false;
+      localSavedAt = Number(data.savedAt) || 0;
       try {
         state.profile = data.profile;
         state.level = data.level || state.level;
@@ -6411,6 +6427,214 @@
       } catch (error) { /* never trap the user: a failed back press simply does nothing */ }
     };
 
+    // ---- Google sign-in + cloud sync (v5.11) ----
+    const GYM_SUPABASE_URL = "https://nemwexkjaehnbkmcxaul.supabase.co";
+    const GYM_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5lbXdleGtqYWVobmJrbWN4YXVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4NTM1MzksImV4cCI6MjEwNTQyOTUzOX0.JoLe2wDAf_hTzslW9OFSzu1wfmtMNyibjeRMgKN80Uo";
+    const GYM_AUTH_REDIRECT = "com.workoutapp.app://auth-callback";
+    let gymSupabaseClient = null;
+    let googleFlowPending = false;
+    let cloudPushTimerId = null;
+    let cloudUserEmail = "";
+
+    function gymSupabase() {
+      if (gymSupabaseClient) return gymSupabaseClient;
+      try {
+        if (typeof supabase === "undefined" || !supabase.createClient) return null;
+        gymSupabaseClient = supabase.createClient(GYM_SUPABASE_URL, GYM_SUPABASE_ANON_KEY);
+      } catch (error) { gymSupabaseClient = null; }
+      return gymSupabaseClient;
+    }
+
+    function googleStatusEl() { return document.getElementById("google-status"); }
+
+    function renderGoogleSection() {
+      const signin = document.getElementById("google-signin");
+      const signout = document.getElementById("google-signout");
+      const status = googleStatusEl();
+      if (!signin || !signout || !status) return;
+      if (googleFlowPending) {
+        signin.hidden = true;
+        signout.hidden = true;
+        return;
+      }
+      if (cloudUserEmail) {
+        signin.hidden = true;
+        signout.hidden = false;
+        status.textContent = "Signed in as " + cloudUserEmail + ". Your progress saves to the cloud.";
+      } else {
+        signin.hidden = false;
+        signout.hidden = true;
+        status.textContent = "Not signed in. Sign in to save your progress to the cloud and sync your profile.";
+      }
+    }
+
+    function startGoogleSignIn() {
+      const sb = gymSupabase();
+      const status = googleStatusEl();
+      if (!sb) {
+        if (status) status.textContent = "Sign-in isn't available right now. Check your connection and try again.";
+        return;
+      }
+      if (googleFlowPending) return;
+      googleFlowPending = true;
+      renderGoogleSection();
+      if (status) status.textContent = "Opening Google sign-in\u2026";
+      sb.auth.signInWithOAuth({
+        provider: "google",
+        options: { skipBrowserRedirect: true, redirectTo: GYM_AUTH_REDIRECT }
+      }).then(function (res) {
+        if (res.error || !res.data || !res.data.url) {
+          googleFlowPending = false;
+          renderGoogleSection();
+          if (status) status.textContent = "Google sign-in couldn't start. " + ((res.error && res.error.message) || "");
+          return;
+        }
+        const url = res.data.url;
+        try {
+          if (typeof LynxosOpen !== "undefined" && LynxosOpen.open) { LynxosOpen.open(url); }
+          else { window.open(url, "_blank"); }
+        } catch (openError) {
+          try { window.open(url, "_blank"); } catch (openError2) {}
+        }
+        if (status) status.textContent = "Approve Google in your browser \u2014 you'll come right back to the app.";
+      }, function (err) {
+        googleFlowPending = false;
+        renderGoogleSection();
+        if (status) status.textContent = "Google sign-in couldn't start. " + ((err && err.message) || "");
+      });
+    }
+
+    function gymUrlParam(url, name) {
+      try {
+        const parts = String(url).split("#");
+        const query = (parts[0].split("?")[1] || "") + "&" + (parts[1] || "");
+        const match = query.match(new RegExp("[?&]" + name + "=([^&]*)"));
+        return match ? decodeURIComponent(match[1]) : "";
+      } catch (error) { return ""; }
+    }
+
+    window.__handleAuthCallback = function (url) {
+      const sb = gymSupabase();
+      const status = googleStatusEl();
+      function fail(message) {
+        googleFlowPending = false;
+        renderGoogleSection();
+        if (status) status.textContent = message;
+      }
+      const errDesc = gymUrlParam(url, "error_description") || gymUrlParam(url, "error");
+      if (errDesc) { fail("Google sign-in failed: " + errDesc); return; }
+      if (!sb) { fail("Sign-in finished, but the app can't reach the login service. Try again."); return; }
+      const code = gymUrlParam(url, "code");
+      if (!code) { fail("Google sign-in failed: no authorization code was returned."); return; }
+      sb.auth.exchangeCodeForSession(code).then(function (res) {
+        if (res.error || !res.data || !res.data.session) {
+          fail("Google sign-in failed: " + ((res.error && res.error.message) || "no session returned"));
+          return;
+        }
+        googleFlowPending = false;
+        onGoogleSignedIn(res.data.session.user);
+      }, function (err) {
+        fail("Google sign-in failed: " + ((err && err.message) || "couldn't complete sign-in"));
+      });
+    };
+
+    function applyGoogleIdentity(user) {
+      const meta = (user && user.user_metadata) || {};
+      const name = meta.full_name || meta.name || "";
+      const avatar = meta.avatar_url || meta.picture || "";
+      if (name) state.profileName = String(name);
+      if (avatar) state.profileImageUrl = String(avatar);
+      cloudUserEmail = (user && user.email) || "";
+    }
+
+    async function pushCloudSnapshot() {
+      const sb = gymSupabase();
+      if (!sb || !lastPersistSnapshot) return;
+      try {
+        const session = (await sb.auth.getSession()).data.session;
+        if (!session || !session.user) return;
+        await sb.from("gym_data").upsert({
+          user_id: session.user.id,
+          data: lastPersistSnapshot,
+          updated_at: new Date().toISOString()
+        }, { onConflict: "user_id" });
+      } catch (error) { /* offline: the local copy keeps working */ }
+    }
+
+    function scheduleCloudPush() {
+      clearTimeout(cloudPushTimerId);
+      cloudPushTimerId = setTimeout(pushCloudSnapshot, 2000);
+    }
+
+    function renderRestoredSession() {
+      syncBuilderControls();
+      renderProfileSummary();
+      renderPlan(document.getElementById("focus").value);
+      renderAchievements();
+      syncProgramManager();
+      openProgram();
+    }
+
+    async function pullCloudSnapshot() {
+      const sb = gymSupabase();
+      if (!sb) return false;
+      try {
+        const session = (await sb.auth.getSession()).data.session;
+        if (!session || !session.user) return false;
+        const res = await sb.from("gym_data").select("data,updated_at").eq("user_id", session.user.id).maybeSingle();
+        if (res.error || !res.data || !res.data.data) return false;
+        const cloudTime = Date.parse(res.data.updated_at) || 0;
+        if (cloudTime > localSavedAt && restoreAppState(res.data.data)) {
+          renderRestoredSession();
+          const tour = document.getElementById("tour-dialog");
+          if (tour && tour.open) { try { tour.close(); } catch (closeError) {} }
+          return true;
+        }
+      } catch (error) { /* offline: keep the local copy */ }
+      return false;
+    }
+
+    async function onGoogleSignedIn(user) {
+      const hadCloud = await pullCloudSnapshot();
+      applyGoogleIdentity(user);
+      renderProfileAvatar();
+      renderGoogleSection();
+      const nameInput = document.getElementById("profile-display-name");
+      if (nameInput) nameInput.value = state.profileName;
+      renderProfileSummary();
+      saveAppState();
+      pushCloudSnapshot();
+      const status = googleStatusEl();
+      if (status) status.textContent = "Signed in as " + (cloudUserEmail || state.profileName || "your Google account") + ". " + (hadCloud ? "Your saved progress was restored." : "Your progress will now save to the cloud.");
+    }
+
+    async function signOutGoogle() {
+      const sb = gymSupabase();
+      try { if (sb) await sb.auth.signOut(); } catch (error) {}
+      googleFlowPending = false;
+      cloudUserEmail = "";
+      renderGoogleSection();
+    }
+
+    async function initGoogleCloud(restoredSession) {
+      const signin = document.getElementById("google-signin");
+      const signout = document.getElementById("google-signout");
+      if (signin) signin.addEventListener("click", startGoogleSignIn);
+      if (signout) signout.addEventListener("click", signOutGoogle);
+      renderGoogleSection();
+      const sb = gymSupabase();
+      if (!sb) return;
+      try {
+        const session = (await sb.auth.getSession()).data.session;
+        if (session && session.user) {
+          cloudUserEmail = session.user.email || "";
+          renderGoogleSection();
+          await pullCloudSnapshot();
+          if (!restoredSession) renderProfileSummary();
+        }
+      } catch (error) { /* offline */ }
+    }
+
     prepareAccessibleOptions();
     const restoredSession = restoreAppState();
     syncCalculatorUnits(false);
@@ -6423,16 +6647,12 @@
     renderHeroStats();
     renderLibrary();
     if (restoredSession) {
-      syncBuilderControls();
-      renderProfileSummary();
-      renderPlan(document.getElementById("focus").value);
-      renderAchievements();
-      syncProgramManager();
-      openProgram();
+      renderRestoredSession();
     } else {
       buildWorkout();
     }
     initializePrograms();
+    initGoogleCloud(restoredSession);
     if (!restoredSession && !hasSeenTour()) openTour("onboarding");
   </script>
 </body>
