@@ -178,10 +178,18 @@ jobs:
                   android:theme="@android:style/Theme.Material.Light.NoActionBar">
                   <activity
                       android:name="com.workoutapp.app.MainActivity"
-                      android:exported="true">
+                      android:exported="true"
+                      android:launchMode="singleTask">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
                           <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                      <!-- Google sign-in: Supabase redirects here after browser approval. -->
+                      <intent-filter>
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+                          <data android:scheme="com.workoutapp.app" android:host="auth-callback" />
                       </intent-filter>
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
@@ -220,6 +228,8 @@ jobs:
               private boolean ttsReady = false;
               private String pendingTts = null;
               private LynxosHealth lynxosHealth;
+              private boolean pageLoaded = false;
+              private String pendingAuthUrl = null;
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
@@ -231,7 +241,18 @@ jobs:
                   // Fire TV: take focus so the D-pad remote drives the page immediately.
                   webView.setFocusable(true);
                   webView.setFocusableInTouchMode(true);
-                  webView.setWebViewClient(new WebViewClient());
+                  webView.setWebViewClient(new WebViewClient() {
+                      @Override
+                      public void onPageFinished(WebView view, String url) {
+                          super.onPageFinished(view, url);
+                          pageLoaded = true;
+                          if (pendingAuthUrl != null) {
+                              String authUrl = pendingAuthUrl;
+                              pendingAuthUrl = null;
+                              deliverAuthUrl(authUrl);
+                          }
+                      }
+                  });
                   webView.setWebChromeClient(new WebChromeClient() {
                       @Override
                       public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
@@ -331,6 +352,16 @@ jobs:
                           } catch (Exception ignored) {}
                       }
                   }, "LynxosBack");
+                  webView.addJavascriptInterface(new Object() {
+                      @JavascriptInterface
+                      public void open(String url) {
+                          try {
+                              Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                              intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                              startActivity(intent);
+                          } catch (Exception ignored) {}
+                      }
+                  }, "LynxosOpen");
                   if (savedInstanceState != null) {
                       webView.restoreState(savedInstanceState);
                   } else {
@@ -362,6 +393,43 @@ jobs:
                           filePathCallback = null;
                       }
                   }
+              }
+
+              private void handleAuthIntent(Intent intent) {
+                  try {
+                      if (intent == null || intent.getData() == null) return;
+                      String d = intent.getDataString();
+                      if (d != null && d.startsWith("com.workoutapp.app://auth-callback")) {
+                          if (pageLoaded) {
+                              deliverAuthUrl(d);
+                          } else {
+                              pendingAuthUrl = d;
+                          }
+                      }
+                  } catch (Exception ignored) {}
+              }
+
+              private void deliverAuthUrl(final String url) {
+                  try {
+                      final String esc = url.replace("\\", "\\\\").replace("'", "\\'");
+                      runOnUiThread(new Runnable() {
+                          @Override
+                          public void run() {
+                              try {
+                                  if (webView != null) {
+                                      webView.evaluateJavascript("window.__handleAuthCallback('" + esc + "')", null);
+                                  }
+                              } catch (Exception ignored) {}
+                          }
+                      });
+                  } catch (Exception ignored) {}
+              }
+
+              @Override
+              protected void onNewIntent(Intent intent) {
+                  super.onNewIntent(intent);
+                  try { setIntent(intent); } catch (Exception ignored) {}
+                  handleAuthIntent(intent);
               }
 
               @Override
