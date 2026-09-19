@@ -161,6 +161,8 @@ jobs:
           cat > app/src/main/AndroidManifest.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET"/>
+              <uses-permission android:name="android.permission.CAMERA"/>
               <uses-permission android:name="android.permission.health.READ_EXERCISE"/>
               <uses-permission android:name="android.permission.health.WRITE_EXERCISE"/>
               <queries>
@@ -171,6 +173,7 @@ jobs:
               </queries>
               <!-- Fire TV: the app works with a D-pad remote, no touchscreen needed. -->
               <uses-feature android:name="android.hardware.touchscreen" android:required="false"/>
+              <uses-feature android:name="android.hardware.camera" android:required="false"/>
               <uses-feature android:name="android.software.leanback" android:required="false"/>
               <application
                   android:label="Lynxos Gym"
@@ -207,13 +210,17 @@ jobs:
           cat > app/src/main/java/com/workoutapp/app/MainActivity.java <<'EOF'
           package com.workoutapp.app;
 
+          import android.Manifest;
           import android.app.Activity;
           import android.content.Intent;
+          import android.content.pm.PackageManager;
+          import android.os.Build;
           import android.net.Uri;
           import android.os.Bundle;
           import android.speech.tts.TextToSpeech;
           import android.webkit.JavascriptInterface;
           import android.webkit.ValueCallback;
+          import android.webkit.PermissionRequest;
           import android.webkit.WebChromeClient;
           import android.webkit.WebView;
           import android.webkit.WebViewClient;
@@ -238,6 +245,9 @@ jobs:
                   webView.getSettings().setJavaScriptEnabled(true);
                   webView.getSettings().setDomStorageEnabled(true);
                   webView.getSettings().setAllowFileAccess(true);
+                  // Let the local file:// page call https APIs (Supabase) and use the camera.
+                  webView.getSettings().setAllowFileAccessFromFileURLs(true);
+                  webView.getSettings().setAllowUniversalAccessFromFileURLs(true);
                   // Fire TV: take focus so the D-pad remote drives the page immediately.
                   webView.setFocusable(true);
                   webView.setFocusableInTouchMode(true);
@@ -273,6 +283,34 @@ jobs:
                               }
                           }
                           return true;
+                      }
+
+                      @Override
+                      public void onPermissionRequest(final PermissionRequest request) {
+                          try {
+                              runOnUiThread(new Runnable() {
+                                  @Override
+                                  public void run() {
+                                      try {
+                                          java.util.ArrayList<String> granted = new java.util.ArrayList<String>();
+                                          for (String r : request.getResources()) {
+                                              if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(r)) {
+                                                  granted.add(r);
+                                              }
+                                          }
+                                          if (granted.isEmpty()) {
+                                              request.deny();
+                                          } else {
+                                              request.grant(granted.toArray(new String[0]));
+                                          }
+                                      } catch (Exception e) {
+                                          try { request.deny(); } catch (Exception ignored2) {}
+                                      }
+                                  }
+                              });
+                          } catch (Exception e) {
+                              try { request.deny(); } catch (Exception ignored2) {}
+                          }
                       }
                   });
                   webView.addJavascriptInterface(new Object() {
@@ -369,6 +407,15 @@ jobs:
                   }
                   setContentView(webView);
                   webView.requestFocus();
+                  // Camera for the phone's TV-sync QR scanner (harmless on TV devices).
+                  try {
+                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                              && checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                          requestPermissions(new String[]{Manifest.permission.CAMERA}, 1002);
+                      }
+                  } catch (Exception ignored) {}
+                  // A fresh app launch from the auth deep link lands here, not in onNewIntent.
+                  try { handleAuthIntent(getIntent()); } catch (Exception ignored) {}
               }
 
               @Override
