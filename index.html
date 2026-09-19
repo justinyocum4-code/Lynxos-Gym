@@ -1005,6 +1005,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 </head>
 <body>
   <a class="skip-link" href="#builder">Skip to workout builder</a>
+  <div id="update-banner" hidden role="status" aria-live="polite" style="background:#c9a227;color:#111;padding:12px 16px;text-align:center;font-weight:bold;">
+    <span id="update-banner-text"></span>
+    <div style="margin-top:8px;">
+      <button type="button" id="update-now" style="background:#111;color:#c9a227;border:2px solid #111;border-radius:8px;padding:12px 24px;font-weight:bold;font-size:16px;">Update</button>
+    </div>
+  </div>
 
   <header class="hero">
     <div class="hero-inner">
@@ -2739,7 +2745,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.11";
+    const LYNXOS_APP_VERSION = "5.12";
+    const LYNXOS_APP_VERSION_CODE = 28; // BUMP every release or the update banner never fires
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
       const help = document.getElementById("health-connect-help");
@@ -6680,6 +6687,38 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       renderGoogleSection();
     }
 
+    // ---- In-app updater (v5.12): Update button at the top whenever a newer release exists ----
+    const LYNXOS_APK_URL = "https://github.com/justinyocum4-code/Lynxos-Gym/releases/latest/download/app-release.apk";
+    function checkForGymUpdate() {
+      const banner = document.getElementById("update-banner");
+      if (!banner) return;
+      fetch("https://api.github.com/repos/justinyocum4-code/Lynxos-Gym/releases/latest")
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d || !d.tag_name) return;
+          const m = /v[\d.]+\+(\d+)/.exec(d.tag_name);
+          if (!m) return;
+          if (!(parseInt(m[1], 10) > LYNXOS_APP_VERSION_CODE)) return;
+          const apk = (d.assets && d.assets.length && d.assets[0].browser_download_url) || LYNXOS_APK_URL;
+          const label = document.getElementById("update-banner-text");
+          if (label) label.textContent = "A new version of Lynxos Gym is ready (" + d.tag_name + "). You're on " + LYNXOS_APP_VERSION + ".";
+          const btn = document.getElementById("update-now");
+          if (btn) btn.addEventListener("click", function () {
+            try {
+              if (typeof LynxosDownloader !== "undefined" && LynxosDownloader.download) {
+                LynxosDownloader.download(apk, "lynxos-gym.apk");
+                if (label) label.textContent = "Downloading the update. The install screen should pop up when it's done.";
+                return;
+              }
+            } catch (error) {}
+            window.open(apk, "_blank");
+          });
+          banner.hidden = false;
+          banner.style.display = "block";
+        })
+        .catch(function () { /* offline: stay quiet */ });
+    }
+
     // ---- TV sync via QR code (v5.11) ----
     function isTvDevice() {
       try {
@@ -6933,6 +6972,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     initializePrograms();
     initGoogleCloud(restoredSession);
     initTvSync();
+    checkForGymUpdate();
     if (!restoredSession && !hasSeenTour()) openTour("onboarding");
   </script>
 </body>
