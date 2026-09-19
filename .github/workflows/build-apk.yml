@@ -72,6 +72,15 @@ jobs:
 
           cp "$HTML_FILE" app/src/main/assets/www/index.html
 
+          # Fire TV (Leanback) banner so the app shows in the TV app row.
+          mkdir -p app/src/main/res/drawable
+          if [ -f tv_banner.png ]; then
+            cp tv_banner.png app/src/main/res/drawable/tv_banner.png
+            echo "TV banner installed."
+          else
+            echo "WARNING: tv_banner.png not found in repo; Leanback banner skipped."
+          fi
+
           # Vendored Health Connect protobuf JARs (Maven resolution of these
           # two modules fails on the CI runner; they are shipped as files).
           mkdir -p app/libs
@@ -160,8 +169,12 @@ jobs:
                       <action android:name="androidx.health.ACTION_REQUEST_PERMISSIONS" />
                   </intent>
               </queries>
+              <!-- Fire TV: the app works with a D-pad remote, no touchscreen needed. -->
+              <uses-feature android:name="android.hardware.touchscreen" android:required="false"/>
+              <uses-feature android:name="android.software.leanback" android:required="false"/>
               <application
                   android:label="Lynxos Gym"
+                  android:banner="@drawable/tv_banner"
                   android:theme="@android:style/Theme.Material.Light.NoActionBar">
                   <activity
                       android:name="com.workoutapp.app.MainActivity"
@@ -169,6 +182,10 @@ jobs:
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
                           <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
                       </intent-filter>
                       <intent-filter>
                           <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
@@ -211,6 +228,9 @@ jobs:
                   webView.getSettings().setJavaScriptEnabled(true);
                   webView.getSettings().setDomStorageEnabled(true);
                   webView.getSettings().setAllowFileAccess(true);
+                  // Fire TV: take focus so the D-pad remote drives the page immediately.
+                  webView.setFocusable(true);
+                  webView.setFocusableInTouchMode(true);
                   webView.setWebViewClient(new WebViewClient());
                   webView.setWebChromeClient(new WebChromeClient() {
                       @Override
@@ -222,7 +242,15 @@ jobs:
                           Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
                           intent.addCategory(Intent.CATEGORY_OPENABLE);
                           intent.setType("image/*");
-                          startActivityForResult(Intent.createChooser(intent, "Choose profile picture"), FILE_CHOOSER_REQUEST);
+                          try {
+                              startActivityForResult(Intent.createChooser(intent, "Choose profile picture"), FILE_CHOOSER_REQUEST);
+                          } catch (Exception e) {
+                              // No gallery/file app on this device (e.g. Fire TV): bail out cleanly.
+                              if (filePathCallback != null) {
+                                  filePathCallback.onReceiveValue(null);
+                                  filePathCallback = null;
+                              }
+                          }
                           return true;
                       }
                   });
@@ -309,6 +337,7 @@ jobs:
                       webView.loadUrl("file:///android_asset/www/index.html");
                   }
                   setContentView(webView);
+                  webView.requestFocus();
               }
 
               @Override
