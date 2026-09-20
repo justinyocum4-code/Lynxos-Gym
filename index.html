@@ -673,6 +673,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       border: 0; border-radius: 0; background: #171717; overflow: hidden;
     }
     .profile-dialog[open] { display: flex; flex-direction: column; }
+    .profile-tabs {
+      display: flex; gap: .5rem; padding: .6rem .75rem 0; background: #171717;
+      border-bottom: 2px solid #7a621c; flex: none;
+    }
+    .profile-tab {
+      flex: 1; padding: .7rem .5rem; font: inherit; font-weight: 700; font-size: 1rem;
+      color: #cde4e1; background: transparent; border: 0; border-bottom: 4px solid transparent;
+      cursor: pointer; min-height: 48px;
+    }
+    .profile-tab[aria-selected="true"] {
+      color: var(--yellow); border-bottom-color: var(--yellow);
+    }
     .profile-dialog .dialog-head { flex: none; }
     .profile-dialog .dialog-body {
       flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain;
@@ -909,7 +921,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     .bottom-nav-list {
       width: min(760px, 100%); min-height: 74px; margin: 0 auto; padding: 0;
-      display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); list-style: none;
+      display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); list-style: none;
     }
     .bottom-nav-item { min-width: 0; }
     .bottom-nav-link {
@@ -1503,12 +1515,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           <span>Profile</span>
         </button>
       </li>
-      <li class="bottom-nav-item">
-        <button class="bottom-nav-link" type="button" id="nav-check-updates" aria-label="Check for updates">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
-          <span>Updates</span>
-        </button>
-      </li>
+      
     </ul>
   </nav>
 
@@ -2105,10 +2112,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   <dialog id="profile-dialog" class="profile-dialog" aria-labelledby="profile-dialog-title">
     <div class="dialog-head">
       <button class="dialog-back" type="button" id="profile-back" aria-label="Go back to the previous screen">← Back</button>
-      <h2 id="profile-dialog-title" tabindex="-1">Profile &amp; settings</h2>
-      <button class="close-btn" type="button" aria-label="Close profile and settings" data-profile-close>×</button>
+      <h2 id="profile-dialog-title" tabindex="-1">Profile</h2>
+      <button class="close-btn" type="button" aria-label="Close profile" data-profile-close>×</button>
+    </div>
+    <div class="profile-tabs" role="tablist" aria-label="Profile and settings">
+      <button type="button" class="profile-tab" role="tab" id="profile-tabbtn" aria-selected="true" aria-controls="profile-panel">Profile</button>
+      <button type="button" class="profile-tab" role="tab" id="settings-tabbtn" aria-selected="false" aria-controls="settings-panel" tabindex="-1">Settings</button>
     </div>
     <div class="dialog-body profile-settings-body">
+      <div id="profile-panel" role="tabpanel" aria-labelledby="profile-tabbtn" tabindex="0">
       <section aria-labelledby="profile-identity-title">
         <h3 id="profile-identity-title">Name and profile picture</h3>
         <div class="profile-identity">
@@ -2132,39 +2144,27 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           <button class="secondary" type="button" id="google-signout" hidden>Sign out</button>
         </div>
       </section>
-      <section aria-labelledby="tv-sync-title" id="tv-sync-section" hidden>
-        <h3 id="tv-sync-title">Sync from your phone</h3>
-        <p class="profile-photo-help">On your phone, open Lynxos Gym, go to Profile and settings, then choose "Sync to TV". Scan this code with your phone, or type the numbers below into your phone.</p>
-        <div id="tv-qr" style="margin:12px 0;"></div>
-        <p id="tv-pair-code" style="font-size:32px;letter-spacing:4px;font-weight:bold;" aria-live="polite"></p>
-        <p class="profile-photo-help" id="tv-sync-status" role="status">Waiting for your phone&hellip;</p>
-        <div class="profile-actions">
-          <button class="secondary" type="button" id="tv-new-code">New code</button>
-        </div>
-      </section>
-      <section aria-labelledby="phone-sync-title" id="phone-sync-section" hidden>
-        <h3 id="phone-sync-title">Sync to TV</h3>
-        <p class="profile-photo-help">On your TV, open Lynxos Gym and go to Profile and settings to see your sync code. Type it here, or scan the QR code shown on your TV.</p>
-        <div class="profile-name-field">
-          <label for="tv-code-input">TV code</label>
-          <input id="tv-code-input" type="text" maxlength="9" autocomplete="off" autocapitalize="characters" placeholder="XXXX-XXXX" style="text-transform:uppercase;">
-        </div>
-        <div class="profile-actions">
-          <button class="secondary" type="button" id="tv-send">Send my progress to TV</button>
-          <button class="secondary" type="button" id="tv-scan">Scan QR code</button>
-        </div>
-        <div id="tv-scanner-wrap" hidden style="margin-top:12px;">
-          <video id="tv-scanner-video" playsinline muted style="width:100%;max-width:420px;background:#000;"></video>
-          <div class="profile-actions" style="margin-top:8px;">
-            <button class="secondary" type="button" id="tv-scan-cancel">Cancel scan</button>
-          </div>
-        </div>
-        <p class="profile-photo-help" id="phone-sync-status" role="status"></p>
-      </section>
       <section aria-labelledby="profile-details-title">
         <h3 id="profile-details-title">Fitness profile</h3>
         <dl class="profile-details" id="profile-details"></dl>
       </section>
+      <section aria-labelledby="workout-history-title">
+        <h3 id="workout-history-title">Workout History</h3>
+        <p id="workout-history-summary" role="status"></p>
+        <ul id="workout-history-list" class="history-list"></ul>
+        <button class="secondary" type="button" id="copy-history-export" style="margin-top:.5rem;">Copy history for Lynxos Health</button>
+        <p id="history-export-status" role="status" aria-live="polite"></p>
+        <textarea id="history-export-fallback" hidden readonly rows="4" aria-label="Copied workout history data" style="width:100%;margin-top:.5rem;"></textarea>
+      </section>
+      <div class="profile-actions">
+        <button class="primary" type="button" id="save-profile">Save profile</button>
+      </div>
+      <p class="profile-save-status" id="profile-save-status" role="status" aria-live="polite"></p>
+    </div>
+      <div id="settings-panel" role="tabpanel" aria-labelledby="settings-tabbtn" tabindex="0" hidden>
+      <div class="profile-actions">
+        <button class="primary" type="button" id="settings-check-updates">Check for updates</button>
+      </div>
       <section aria-labelledby="app-settings-title">
         <h3 id="app-settings-title">Workout settings</h3>
         <div class="settings-group">
@@ -2199,28 +2199,48 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           <button class="secondary tool-launcher" type="button" id="open-one-rep-calculator">Open 1-rep max calculator</button>
         </div>
       </section>
-      <section aria-labelledby="workout-history-title">
-        <h3 id="workout-history-title">Workout History</h3>
-        <p id="workout-history-summary" role="status"></p>
-        <ul id="workout-history-list" class="history-list"></ul>
-        <button class="secondary" type="button" id="copy-history-export" style="margin-top:.5rem;">Copy history for Lynxos Health</button>
-        <p id="history-export-status" role="status" aria-live="polite"></p>
-        <textarea id="history-export-fallback" hidden readonly rows="4" aria-label="Copied workout history data" style="width:100%;margin-top:.5rem;"></textarea>
+      <section aria-labelledby="tv-sync-title" id="tv-sync-section" hidden>
+        <h3 id="tv-sync-title">Sync from your phone</h3>
+        <p class="profile-photo-help">On your phone, open Lynxos Gym, go to Profile and settings, then choose "Sync to TV". Scan this code with your phone, or type the numbers below into your phone.</p>
+        <div id="tv-qr" style="margin:12px 0;"></div>
+        <p id="tv-pair-code" style="font-size:32px;letter-spacing:4px;font-weight:bold;" aria-live="polite"></p>
+        <p class="profile-photo-help" id="tv-sync-status" role="status">Waiting for your phone&hellip;</p>
+        <div class="profile-actions">
+          <button class="secondary" type="button" id="tv-new-code">New code</button>
+        </div>
+      </section>
+      <section aria-labelledby="phone-sync-title" id="phone-sync-section" hidden>
+        <h3 id="phone-sync-title">Sync to TV</h3>
+        <p class="profile-photo-help">On your TV, open Lynxos Gym and go to Profile and settings to see your sync code. Type it here, or scan the QR code shown on your TV.</p>
+        <div class="profile-name-field">
+          <label for="tv-code-input">TV code</label>
+          <input id="tv-code-input" type="text" maxlength="9" autocomplete="off" autocapitalize="characters" placeholder="XXXX-XXXX" style="text-transform:uppercase;">
+        </div>
+        <div class="profile-actions">
+          <button class="secondary" type="button" id="tv-send">Send my progress to TV</button>
+          <button class="secondary" type="button" id="tv-scan">Scan QR code</button>
+        </div>
+        <div id="tv-scanner-wrap" hidden style="margin-top:12px;">
+          <video id="tv-scanner-video" playsinline muted style="width:100%;max-width:420px;background:#000;"></video>
+          <div class="profile-actions" style="margin-top:8px;">
+            <button class="secondary" type="button" id="tv-scan-cancel">Cancel scan</button>
+          </div>
+        </div>
+        <p class="profile-photo-help" id="phone-sync-status" role="status"></p>
       </section>
       <section aria-labelledby="app-info-title">
         <h3 id="app-info-title">App info</h3>
         <dl class="profile-details" id="app-info"></dl>
       </section>
       <div class="profile-actions">
-        <button class="primary" type="button" id="save-profile">Save profile</button>
         <button class="secondary share-app" type="button" aria-label="Share Lynxos Gym with another person" aria-describedby="profile-save-status">Share this app</button>
         <button class="secondary" type="button" id="redo-questionnaire">Redo questionnaire</button>
         <button class="secondary" type="button" id="replay-tour">Replay app tour</button>
         <button class="secondary" type="button" data-profile-close>Close profile</button>
       </div>
-      <p class="profile-save-status" id="profile-save-status" role="status" aria-live="polite"></p>
     </div>
-  </dialog>
+      </div>
+    </dialog>
 
   <dialog id="plate-dialog" aria-labelledby="plate-title">
     <div class="dialog-head">
@@ -2827,8 +2847,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.31";
-    const LYNXOS_APP_VERSION_CODE = 47; // BUMP every release or the update banner never fires
+    const LYNXOS_APP_VERSION = "5.32";
+    const LYNXOS_APP_VERSION_CODE = 48; // BUMP every release or the update banner never fires
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
       const help = document.getElementById("health-connect-help");
@@ -4315,10 +4335,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       event.target.value = "";
     }
 
+    function selectProfileTab(which) {
+      const isProfile = which !== "settings";
+      const tabProfile = document.getElementById("profile-tabbtn");
+      const tabSettings = document.getElementById("settings-tabbtn");
+      const panelProfile = document.getElementById("profile-panel");
+      const panelSettings = document.getElementById("settings-panel");
+      if (!tabProfile || !tabSettings || !panelProfile || !panelSettings) return;
+      tabProfile.setAttribute("aria-selected", isProfile ? "true" : "false");
+      tabSettings.setAttribute("aria-selected", isProfile ? "false" : "true");
+      tabProfile.tabIndex = isProfile ? 0 : -1;
+      tabSettings.tabIndex = isProfile ? -1 : 0;
+      panelProfile.hidden = !isProfile;
+      panelSettings.hidden = isProfile;
+    }
     function openProfile(returnContext = null) {
       renderProfileScreen();
       profileReturn = returnContext || (activeAppSection ? { type: "app", section: activeAppSection } : { type: "page" });
       setActiveNavigation("profile");
+      selectProfileTab("profile");
       profileDialog.showModal();
       requestAnimationFrame(() => document.getElementById("profile-dialog-title").focus());
     }
@@ -6817,7 +6852,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
     document.getElementById("hero-check-updates")?.addEventListener("click", () => checkForGymUpdate(true));
     document.getElementById("builder-check-updates")?.addEventListener("click", () => checkForGymUpdate(true));
-    document.getElementById("nav-check-updates")?.addEventListener("click", () => checkForGymUpdate(true));
+    document.getElementById("settings-check-updates")?.addEventListener("click", () => checkForGymUpdate(true));
+    document.getElementById("profile-tabbtn")?.addEventListener("click", () => selectProfileTab("profile"));
+    document.getElementById("settings-tabbtn")?.addEventListener("click", () => selectProfileTab("settings"));
     document.querySelectorAll("[data-program-destination]").forEach(button => button.addEventListener("click", () => {
       const destination = button.dataset.programDestination;
       programDialog.close();
