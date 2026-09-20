@@ -573,6 +573,32 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     .music-toggle[aria-pressed="true"] { background: var(--ink); color: var(--white); box-shadow: inset 0 0 0 2px var(--mint); }
     .music-volume { width: 100%; min-width: 0; accent-color: var(--focus); }
+
+    /* v5.17: pin timer + current exercise on screen; collapse session options */
+    .session-overview { position: sticky; top: 0; z-index: 60; background: #171717; padding: .25rem 0 .75rem; }
+    #player-coach { max-height: 26dvh; overflow-y: auto; overscroll-behavior-y: contain; }
+    .session-tools > summary { grid-column: 1 / -1; list-style: none; cursor: pointer; font-weight: 800; padding: .8rem 1rem; border: 2px solid var(--ink); border-radius: 10px; background: #201c12; color: var(--white); }
+    .session-tools > summary::-webkit-details-marker { display: none; }
+    .session-tools > summary::before { content: "\25B8  "; color: var(--ink); }
+    .session-tools[open] > summary::before { content: "\25BE  "; }
+    /* v5.17: nutrition meal plans + grocery list */
+    .today-workout { padding: .8rem 1rem; border: 2px solid var(--ink); border-radius: 10px; background: #201c12; margin-bottom: 1rem; }
+    .today-workout p { margin: .3rem 0 .7rem; }
+    .day-picker { display: flex; flex-wrap: wrap; gap: .5rem; margin: .6rem 0 1rem; }
+    .day-picker button { min-height: 44px; padding: .5rem .85rem; border: 2px solid var(--ink); border-radius: 999px; background: #201c12; color: var(--white); font-weight: 700; cursor: pointer; }
+    .day-picker button[aria-pressed="true"] { background: var(--ink); color: #171717; }
+    .meal-slot { margin: 0 0 .8rem; padding: .75rem .95rem; border: 2px solid #4a4436; border-radius: 10px; background: #1e1e1e; }
+    .meal-slot h4 { margin: 0 0 .25rem; }
+    .meal-slot p { margin: .25rem 0; }
+    .meal-slot .meal-protein { font-weight: 800; color: var(--ink); }
+    .meal-slot .meal-ingredients { font-size: .92rem; opacity: .92; }
+    .grocery-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin: .6rem 0 1rem; }
+    .grocery-group { margin: 0 0 1.1rem; }
+    .grocery-group h4 { margin: 0 0 .35rem; color: var(--ink); }
+    .grocery-item { display: flex; align-items: center; gap: .65rem; padding: .5rem 0; border-bottom: 1px solid #3a352a; }
+    .grocery-item input[type="checkbox"] { width: 1.5rem; height: 1.5rem; flex: none; accent-color: var(--ink); }
+    .grocery-item label { flex: 1; }
+    .grocery-item input:checked + label { text-decoration: line-through; opacity: .6; }
     .music-help { margin: .45rem 0 0; color: var(--muted); font-size: .86rem; line-height: 1.3; }
     .rest-options { display: flex; flex-wrap: wrap; gap: .4rem; }
     .rest-option {
@@ -1291,6 +1317,28 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         </div>
       </div>
       <div class="guide-screen-grid">
+        <article class="nutrition-card" aria-labelledby="today-fuel-title">
+          <h3 id="today-fuel-title">Today&apos;s fuel plan</h3>
+          <div class="today-workout" id="today-workout-summary" aria-live="polite"></div>
+          <div id="today-meals" aria-live="polite"></div>
+        </article>
+        <article class="nutrition-card" aria-labelledby="meal-week-title">
+          <h3 id="meal-week-title">Your 7-day meal plan</h3>
+          <p>A simple high-protein week that repeats. Choose a day to see its meals.</p>
+          <div class="day-picker" id="meal-day-picker" role="group" aria-label="Choose a day of the meal plan"></div>
+          <div id="meal-day-detail" aria-live="polite"></div>
+        </article>
+        <article class="nutrition-card" aria-labelledby="grocery-title">
+          <h3 id="grocery-title">Monthly grocery list</h3>
+          <p>Everything for about 4 weeks of this meal plan, grouped by store section. Check items off as you shop. Your checks are saved and backed up with the rest of your data.</p>
+          <div class="grocery-actions">
+            <button class="secondary" type="button" id="grocery-check-all">Check all</button>
+            <button class="secondary" type="button" id="grocery-clear-checked">Clear checked</button>
+          </div>
+          <div id="grocery-list"></div>
+        </article>
+      </div>
+      <div class="guide-screen-grid">
         <article class="protein-target" aria-labelledby="protein-target-title">
           <h3 id="protein-target-title">Your daily protein starting range</h3>
           <p id="protein-target-text" aria-live="polite">Add your body weight in the fitness questionnaire to calculate a personal range.</p>
@@ -1918,7 +1966,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         </div>
         <button class="voice-coach-toggle" type="button" id="voice-coach-toggle" aria-pressed="true" aria-label="Voice coach is on. Double tap to turn it off" aria-describedby="voice-coach-help">On</button>
       </div>
-      <div class="session-tools">
+      <details class="session-tools">
+        <summary>Session options: voice coach, rest timer, and music</summary>
         <div class="session-tool">
           <strong>Hands-free commands</strong>
           <button class="primary" type="button" id="voice-command-toggle" aria-pressed="false" aria-label="Enable microphone for hands-free workout commands">Enable microphone</button>
@@ -1958,7 +2007,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             <p class="playlist-note">Start one in your preferred music app before lifting, or keep using the built-in instrumental above.</p>
           </details>
         </div>
-      </div>
+      </details>
       <div class="session-action-dock" aria-label="Workout actions">
         <div class="player-controls">
           <button class="primary" type="button" id="session-action" aria-label="Guided workout action, starting">Starting…</button>
@@ -2705,6 +2754,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       tourIndex: 0, tourReturn: "onboarding", safetyActive: false, safetyWasAutoPaused: false,
       quickWorkout: [], quickWorkoutTitle: "", quickWorkoutFocus: "full", quickWorkoutDuration: 15,
       quickSession: false, planWorkoutBackup: null, activeWorkoutLabel: "",
+      groceryChecks: {},
       sessionPain: new Set(), painWorkoutBackup: null, pendingPainStart: false
     };
 
@@ -2770,8 +2820,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.16";
-    const LYNXOS_APP_VERSION_CODE = 32; // BUMP every release or the update banner never fires
+    const LYNXOS_APP_VERSION = "5.17";
+    const LYNXOS_APP_VERSION_CODE = 33; // BUMP every release or the update banner never fires
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
       const help = document.getElementById("health-connect-help");
@@ -2937,7 +2987,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         quickWorkout: state.quickWorkout, quickWorkoutTitle: state.quickWorkoutTitle,
         quickWorkoutFocus: state.quickWorkoutFocus, quickWorkoutDuration: state.quickWorkoutDuration,
         quickSession: state.quickSession === true,
-        planWorkoutBackup: state.planWorkoutBackup
+        planWorkoutBackup: state.planWorkoutBackup,
+        groceryChecks: state.groceryChecks
       };
     }
 
@@ -3023,6 +3074,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         }
         state.quickSession = false;
         state.planWorkoutBackup = null;
+        state.groceryChecks = data.groceryChecks || {};
         lastPersistSnapshot = JSON.stringify(persistableState());
       } catch (error) { return false; }
       return true;
@@ -3160,7 +3212,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function openAppSection(sectionId, returnContext = null) {
       const section = document.getElementById(sectionId);
       if (!section || !appSectionTitles[sectionId]) return;
-      if (sectionId === "nutrition") renderProteinTarget();
+      if (sectionId === "nutrition") { renderProteinTarget(); renderNutritionPlans(); }
       if (!activeAppSection) {
         appSectionReturn = returnContext || { type: "page", scrollY: window.scrollY };
       }
@@ -3892,6 +3944,221 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const highGrams = Math.round(state.profile.weight * .9);
       const weightText = profileWeightText(state.profile);
       target.innerHTML = `<strong>About ${lowGrams} to ${highGrams} grams per day</strong><br>Based on your body weight of ${escapeText(weightText)}.`;
+    }
+
+    // v5.17: daily meal plans + monthly grocery list.
+    // A simple 7-day high-protein rotation that repeats weekly. Ingredients are
+    // [name, amount per day, unit, store category] so the grocery list can scale
+    // daily amounts up to about 4 weeks.
+    const MEAL_TEMPLATES = {
+      yogurtBowl: { slot: "Breakfast", name: "Greek yogurt power bowl", desc: "Greek yogurt with oats, berries, and a drizzle of honey.", protein: 30,
+        ingredients: [["Greek yogurt",1,"cup","Dairy and eggs"],["Rolled oats",0.5,"cup","Grains and carbs"],["Mixed berries",0.5,"cup","Produce"],["Honey",1,"tbsp","Pantry"]] },
+      chickenRice: { slot: "Lunch", name: "Chicken rice bowl", desc: "Chicken breast over rice with mixed vegetables and olive oil.", protein: 40,
+        ingredients: [["Chicken breast",6,"oz","Protein"],["White rice",1,"cup","Grains and carbs"],["Mixed vegetables",1,"cup","Produce"],["Olive oil",1,"tbsp","Pantry"]] },
+      beefPotato: { slot: "Dinner", name: "Beef and potato plate", desc: "Lean ground beef with roasted potatoes and green beans.", protein: 38,
+        ingredients: [["Lean ground beef",6,"oz","Protein"],["Potato",2,"piece","Produce"],["Green beans",1,"cup","Produce"],["Olive oil",1,"tbsp","Pantry"]] },
+      cottageFruit: { slot: "Snack", name: "Cottage cheese and fruit", desc: "Cottage cheese with pineapple chunks.", protein: 24,
+        ingredients: [["Cottage cheese",1,"cup","Dairy and eggs"],["Pineapple",0.5,"cup","Produce"]] },
+      eggScramble: { slot: "Breakfast", name: "Egg scramble", desc: "Scrambled eggs with spinach and whole-grain toast.", protein: 24,
+        ingredients: [["Eggs",3,"piece","Dairy and eggs"],["Spinach",1,"cup","Produce"],["Whole-grain bread",2,"slice","Grains and carbs"],["Butter",1,"tbsp","Dairy and eggs"]] },
+      tunaWrap: { slot: "Lunch", name: "Tuna wrap", desc: "Tuna with Greek yogurt in a whole-wheat wrap and salad greens.", protein: 38,
+        ingredients: [["Canned tuna",1,"can","Protein"],["Whole-wheat wrap",1,"piece","Grains and carbs"],["Salad greens",1,"cup","Produce"],["Greek yogurt",0.25,"cup","Dairy and eggs"]] },
+      salmonSweet: { slot: "Dinner", name: "Salmon and sweet potato", desc: "Baked salmon with sweet potato and broccoli.", protein: 36,
+        ingredients: [["Salmon fillet",6,"oz","Protein"],["Sweet potato",1,"piece","Produce"],["Broccoli",1,"cup","Produce"],["Olive oil",1,"tbsp","Pantry"]] },
+      proteinShake: { slot: "Snack", name: "Protein shake", desc: "Whey protein blended with milk and banana.", protein: 30,
+        ingredients: [["Whey protein",1,"scoop","Pantry"],["Milk",1,"cup","Dairy and eggs"],["Banana",1,"piece","Produce"]] },
+      proteinOats: { slot: "Breakfast", name: "Protein oatmeal", desc: "Oats cooked with milk, whey, peanut butter, and banana.", protein: 32,
+        ingredients: [["Rolled oats",0.75,"cup","Grains and carbs"],["Milk",1,"cup","Dairy and eggs"],["Whey protein",0.5,"scoop","Pantry"],["Peanut butter",1,"tbsp","Pantry"],["Banana",1,"piece","Produce"]] },
+      chickenQuesadilla: { slot: "Lunch", name: "Chicken quesadilla", desc: "Chicken and cheese in whole-wheat tortillas with salsa.", protein: 40,
+        ingredients: [["Chicken breast",5,"oz","Protein"],["Shredded cheese",0.5,"cup","Dairy and eggs"],["Whole-wheat tortilla",2,"piece","Grains and carbs"],["Salsa",0.25,"cup","Pantry"]] },
+      turkeyChili: { slot: "Dinner", name: "Turkey chili", desc: "Ground turkey chili with beans, tomatoes, and onion.", protein: 38,
+        ingredients: [["Ground turkey",6,"oz","Protein"],["Kidney beans",1,"cup","Pantry"],["Diced tomatoes",1,"can","Pantry"],["Onion",0.5,"piece","Produce"]] },
+      yogurtAlmonds: { slot: "Snack", name: "Yogurt and almonds", desc: "Greek yogurt with a handful of almonds.", protein: 20,
+        ingredients: [["Greek yogurt",0.75,"cup","Dairy and eggs"],["Almonds",1,"oz","Pantry"]] },
+      eggFriedRice: { slot: "Lunch", name: "Egg fried rice", desc: "Scrambled eggs with rice, peas, carrots, and soy sauce.", protein: 26,
+        ingredients: [["Eggs",3,"piece","Dairy and eggs"],["White rice",1,"cup","Grains and carbs"],["Frozen peas and carrots",1,"cup","Produce"],["Soy sauce",1,"tbsp","Pantry"]] },
+      chickenStirfry: { slot: "Dinner", name: "Chicken stir-fry", desc: "Chicken breast with stir-fry vegetables over rice.", protein: 38,
+        ingredients: [["Chicken breast",6,"oz","Protein"],["Stir-fry vegetables",2,"cup","Produce"],["White rice",1,"cup","Grains and carbs"],["Soy sauce",1,"tbsp","Pantry"]] },
+      beefTacos: { slot: "Dinner", name: "Beef tacos", desc: "Lean ground beef tacos with lettuce, cheese, and salsa.", protein: 36,
+        ingredients: [["Lean ground beef",5,"oz","Protein"],["Corn tortilla",3,"piece","Grains and carbs"],["Lettuce",1,"cup","Produce"],["Shredded cheese",0.25,"cup","Dairy and eggs"],["Salsa",0.25,"cup","Pantry"]] },
+      proteinPancakes: { slot: "Breakfast", name: "Protein pancakes", desc: "Oat, egg, and whey pancakes with banana.", protein: 30,
+        ingredients: [["Rolled oats",0.5,"cup","Grains and carbs"],["Eggs",2,"piece","Dairy and eggs"],["Whey protein",0.5,"scoop","Pantry"],["Banana",1,"piece","Produce"]] },
+      chickenPasta: { slot: "Dinner", name: "Chicken pasta", desc: "Chicken breast with pasta, marinara, and parmesan.", protein: 40,
+        ingredients: [["Chicken breast",6,"oz","Protein"],["Pasta",4,"oz","Grains and carbs"],["Marinara sauce",0.5,"cup","Pantry"],["Parmesan",2,"tbsp","Dairy and eggs"]] }
+    };
+    const MEAL_PLAN_DAYS = [
+      { day: "Monday", meals: ["yogurtBowl", "chickenRice", "beefPotato", "cottageFruit"] },
+      { day: "Tuesday", meals: ["eggScramble", "tunaWrap", "salmonSweet", "proteinShake"] },
+      { day: "Wednesday", meals: ["proteinOats", "chickenQuesadilla", "turkeyChili", "yogurtAlmonds"] },
+      { day: "Thursday", meals: ["yogurtBowl", "eggFriedRice", "chickenStirfry", "cottageFruit"] },
+      { day: "Friday", meals: ["eggScramble", "chickenRice", "beefTacos", "proteinShake"] },
+      { day: "Saturday", meals: ["proteinPancakes", "tunaWrap", "chickenPasta", "yogurtAlmonds"] },
+      { day: "Sunday", meals: ["proteinOats", "turkeyChili", "salmonSweet", "cottageFruit"] }
+    ];
+    const GROCERY_CATEGORIES = ["Protein", "Dairy and eggs", "Produce", "Grains and carbs", "Pantry"];
+    const GROCERY_WEEKS = 4;
+    let mealPlanDay = (new Date().getDay() + 6) % 7; // Monday-first index
+    let groceryButtonsBound = false;
+
+    function mealDayProtein(dayIndex) {
+      return MEAL_PLAN_DAYS[dayIndex].meals.reduce(function (sum, key) {
+        return sum + (MEAL_TEMPLATES[key].protein || 0);
+      }, 0);
+    }
+
+    function mealSlotHTML(meal) {
+      const ing = meal.ingredients.map(function (parts) {
+        return parts[0] + ", " + parts[1] + " " + parts[2];
+      }).join("; ");
+      return "<div class=\"meal-slot\"><h4>" + escapeText(meal.slot) + ": " + escapeText(meal.name) + "</h4>" +
+        "<p>" + escapeText(meal.desc) + "</p>" +
+        "<p class=\"meal-protein\">About " + meal.protein + " g protein</p>" +
+        "<p class=\"meal-ingredients\"><strong>Ingredients:</strong> " + escapeText(ing) + ".</p></div>";
+    }
+
+    function renderTodayFuel() {
+      const workoutWrap = document.getElementById("today-workout-summary");
+      const mealsWrap = document.getElementById("today-meals");
+      if (!workoutWrap || !mealsWrap) return;
+      const item = state.program[state.programPage];
+      if (!item) {
+        workoutWrap.innerHTML = "<p><strong>No training program yet.</strong> Build your 4-week plan in the Workout section and it will appear here beside your meals.</p>";
+      } else {
+        const focusName = { full: "Full body", upper: "Upper body", lower: "Lower body", core: "Core and stability" }[item.focus] || "Workout";
+        const dayLabel = item.isDeload ? "Deload workout" : ("Week " + item.week + ", day " + item.day);
+        workoutWrap.innerHTML = "<p><strong>Today&apos;s training: " + escapeText(dayLabel) + " — " + escapeText(focusName) + ".</strong><br>" +
+          item.moves.length + " exercises, " + item.rounds + " rounds.</p>" +
+          "<button class=\"primary\" type=\"button\" id=\"today-open-workout\">Open today&apos;s workout</button>";
+        const btn = document.getElementById("today-open-workout");
+        if (btn) btn.addEventListener("click", function () { openProgram(); });
+      }
+      const day = MEAL_PLAN_DAYS[mealPlanDay];
+      mealsWrap.innerHTML = "<h4>Today&apos;s meals (" + day.day + ") — about " + mealDayProtein(mealPlanDay) + " g protein</h4>" +
+        day.meals.map(function (key) { return mealSlotHTML(MEAL_TEMPLATES[key]); }).join("");
+    }
+
+    function renderMealDayPicker() {
+      const picker = document.getElementById("meal-day-picker");
+      if (!picker) return;
+      picker.innerHTML = "";
+      MEAL_PLAN_DAYS.forEach(function (d, i) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = d.day;
+        b.setAttribute("aria-pressed", i === mealPlanDay ? "true" : "false");
+        b.setAttribute("aria-label", d.day + " meal plan");
+        b.addEventListener("click", function () {
+          mealPlanDay = i;
+          renderMealDayPicker();
+          renderMealDay(i);
+          renderTodayFuel();
+        });
+        picker.appendChild(b);
+      });
+    }
+
+    function renderMealDay(i) {
+      const detail = document.getElementById("meal-day-detail");
+      if (!detail) return;
+      const day = MEAL_PLAN_DAYS[i];
+      detail.innerHTML = "<h4>" + day.day + " — about " + mealDayProtein(i) + " g protein</h4>" +
+        day.meals.map(function (key) { return mealSlotHTML(MEAL_TEMPLATES[key]); }).join("");
+    }
+
+    function grocerySlug(name) {
+      return "grocery-" + String(name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    }
+
+    function aggregateGroceries() {
+      const map = {};
+      MEAL_PLAN_DAYS.forEach(function (d) {
+        d.meals.forEach(function (key) {
+          MEAL_TEMPLATES[key].ingredients.forEach(function (parts) {
+            const name = parts[0];
+            if (!map[name]) map[name] = { name: name, qty: 0, unit: parts[2], category: parts[3] };
+            map[name].qty += parts[1];
+          });
+        });
+      });
+      return Object.keys(map).map(function (k) {
+        const g = map[k];
+        g.qty = g.qty * GROCERY_WEEKS;
+        return g;
+      });
+    }
+
+    function formatGroceryQty(qty, unit) {
+      let q = qty, u = unit;
+      if (u === "oz" && q >= 16) { q = q / 16; u = "lb"; }
+      q = q >= 20 ? Math.round(q) : Math.round(q * 2) / 2;
+      const plurals = { piece: "pieces", slice: "slices", can: "cans", cup: "cups", scoop: "scoops" };
+      let unitText = u;
+      if (q !== 1 && plurals[u]) unitText = plurals[u];
+      return (Number.isInteger(q) ? String(q) : q.toFixed(1)) + " " + unitText;
+    }
+
+    function renderGroceryList() {
+      const list = document.getElementById("grocery-list");
+      if (!list) return;
+      const items = aggregateGroceries();
+      list.innerHTML = "";
+      GROCERY_CATEGORIES.forEach(function (cat) {
+        const group = items.filter(function (g) { return g.category === cat; });
+        if (!group.length) return;
+        const groupEl = document.createElement("div");
+        groupEl.className = "grocery-group";
+        const h = document.createElement("h4");
+        h.textContent = cat;
+        groupEl.appendChild(h);
+        group.forEach(function (g) {
+          const slug = grocerySlug(g.name);
+          const amount = formatGroceryQty(g.qty, g.unit);
+          const row = document.createElement("div");
+          row.className = "grocery-item";
+          const box = document.createElement("input");
+          box.type = "checkbox";
+          box.id = slug;
+          box.checked = !!state.groceryChecks[slug];
+          box.setAttribute("aria-label", g.name + ", " + amount);
+          box.addEventListener("change", function () {
+            if (box.checked) state.groceryChecks[slug] = true;
+            else delete state.groceryChecks[slug];
+            saveAppState();
+          });
+          const label = document.createElement("label");
+          label.htmlFor = slug;
+          label.textContent = g.name + " — " + amount;
+          row.appendChild(box);
+          row.appendChild(label);
+          groupEl.appendChild(row);
+        });
+        list.appendChild(groupEl);
+      });
+    }
+
+    function bindGroceryButtons() {
+      if (groceryButtonsBound) return;
+      groceryButtonsBound = true;
+      const all = document.getElementById("grocery-check-all");
+      const clear = document.getElementById("grocery-clear-checked");
+      if (all) all.addEventListener("click", function () {
+        aggregateGroceries().forEach(function (g) { state.groceryChecks[grocerySlug(g.name)] = true; });
+        saveAppState();
+        renderGroceryList();
+      });
+      if (clear) clear.addEventListener("click", function () {
+        state.groceryChecks = {};
+        saveAppState();
+        renderGroceryList();
+      });
+    }
+
+    function renderNutritionPlans() {
+      renderTodayFuel();
+      renderMealDayPicker();
+      renderMealDay(mealPlanDay);
+      bindGroceryButtons();
+      renderGroceryList();
     }
 
     function renderProfileSummary() {
@@ -7086,6 +7353,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     initGoogleCloud(restoredSession);
     initTvWelcome();
     initTvSync();
+    renderNutritionPlans();
     checkForGymUpdate();
     // Re-check whenever the app comes back to the foreground (v5.14): a release
     // published while the app sat open in the background is picked up on return.
