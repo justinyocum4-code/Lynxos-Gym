@@ -199,6 +199,16 @@ jobs:
                           <action android:name="android.intent.action.MAIN" />
                           <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
                       </intent-filter>
+                  </activity>
+                  <!-- Health Connect privacy rationale (mandatory: the permission
+                       request is cancelled if no activity handles these). -->
+                  <activity
+                      android:name="com.workoutapp.app.RationaleActivity"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                      </intent-filter>
                       <intent-filter>
                           <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
                           <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
@@ -599,6 +609,39 @@ jobs:
                   } catch (Exception e) {
                       defaultBackPressed();
                   }
+              }
+          }
+          EOF
+
+          cat > app/src/main/java/com/workoutapp/app/RationaleActivity.java <<'EOF'
+          package com.workoutapp.app;
+
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.view.Gravity;
+          import android.widget.ScrollView;
+          import android.widget.TextView;
+
+          /**
+           * Health Connect privacy rationale screen. The Health Connect app fires
+           * androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE (pre-14) or
+           * VIEW_PERMISSION_USAGE (14+) from its permission sheet, and cancels the
+           * permission request if no activity in our app handles it.
+           */
+          public class RationaleActivity extends Activity {
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  setTitle("Why Lynxos Gym uses Health Connect");
+                  ScrollView scroll = new ScrollView(this);
+                  TextView tv = new TextView(this);
+                  tv.setText("Lynxos Gym uses Health Connect to save your finished workouts as exercise sessions on your device.\n\nWhat we access:\n- Write finished workout sessions (exercise type, duration, start and end time).\n- Read exercise sessions, so the app can confirm what was saved.\n\nYour workout data stays on your device inside Health Connect. Lynxos Gym does not upload, sell, or share your health data with anyone.");
+                  tv.setTextSize(18);
+                  tv.setPadding(48, 48, 48, 48);
+                  tv.setGravity(Gravity.START);
+                  tv.setLineSpacing(8, 1.15f);
+                  scroll.addView(tv);
+                  setContentView(scroll);
               }
           }
           EOF
