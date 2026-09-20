@@ -1089,6 +1089,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           <h2 id="builder-title">Build a program that fits</h2>
           <p>Choose your level, time, focus, and available equipment. Then generate a four-week plan you can review one workout at a time.</p>
         </div>
+        <div>
+          <button class="secondary" type="button" id="builder-check-updates">Check for updates</button>
+        </div>
       </div>
 
       <div class="current-plan-card" id="current-plan-card" hidden>
@@ -2818,8 +2821,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.28";
-    const LYNXOS_APP_VERSION_CODE = 44; // BUMP every release or the update banner never fires
+    const LYNXOS_APP_VERSION = "5.29";
+    const LYNXOS_APP_VERSION_CODE = 45; // BUMP every release or the update banner never fires
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
       const help = document.getElementById("health-connect-help");
@@ -6807,6 +6810,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (hasSavedProgram()) { event.preventDefault(); openProgram(); }
     });
     document.getElementById("hero-check-updates")?.addEventListener("click", () => checkForGymUpdate(true));
+    document.getElementById("builder-check-updates")?.addEventListener("click", () => checkForGymUpdate(true));
     document.querySelectorAll("[data-program-destination]").forEach(button => button.addEventListener("click", () => {
       const destination = button.dataset.programDestination;
       programDialog.close();
