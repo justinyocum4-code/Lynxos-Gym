@@ -2818,8 +2818,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.27";
-    const LYNXOS_APP_VERSION_CODE = 43; // BUMP every release or the update banner never fires
+    const LYNXOS_APP_VERSION = "5.28";
+    const LYNXOS_APP_VERSION_CODE = 44; // BUMP every release or the update banner never fires
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
       const help = document.getElementById("health-connect-help");
@@ -3235,13 +3235,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
 
     function closeAppSection(restore = true) {
-      syncBuilderVisibility();
       const returnContext = appSectionReturn;
       document.body.classList.remove("app-screen-view");
       document.getElementById("screen-header").hidden = true;
       document.querySelectorAll("main > section").forEach(item => item.classList.remove("active-app-screen"));
       activeAppSection = null;
       appSectionReturn = null;
+      // v5.28: sync AFTER clearing activeAppSection. It used to run first, while
+      // activeAppSection was still "builder", which left the builder stuck
+      // visible on the home page.
+      syncBuilderVisibility();
       if (!restore) return;
       if (returnContext?.type === "program") {
         programDialog.showModal();
@@ -7508,8 +7511,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // Re-check whenever the app comes back to the foreground (v5.14): a release
     // published while the app sat open in the background is picked up on return.
     document.addEventListener("visibilitychange", function () {
-      if (!document.hidden) checkForGymUpdate();
+      if (!document.hidden) {
+        checkForGymUpdate();
+        // v5.28: re-hide the builder if a stuck visible state survived.
+        syncBuilderVisibility();
+      }
     });
+    // v5.28: guarantee a clean home view at boot — no stuck fullscreen section,
+    // hero visible, builder hidden whenever a program exists.
+    activeAppSection = null;
+    appSectionReturn = null;
+    document.body.classList.remove("app-screen-view");
+    document.getElementById("screen-header").hidden = true;
+    syncBuilderVisibility();
     if (!isTvDevice() && !restoredSession && !hasSeenTour()) openTour("onboarding");
   </script>
 </body>
