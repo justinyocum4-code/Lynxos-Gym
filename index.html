@@ -1954,10 +1954,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="round" id="player-progress" aria-live="off" aria-atomic="true"></div>
         <span class="session-phase" id="session-phase">Get ready</span>
         <h3 id="player-exercise"></h3>
-        <div id="player-coach"></div>
-        <p id="player-dose"></p>
         <div class="timer" id="timer" role="timer" aria-label="Get ready countdown, 30 seconds remaining">0:30</div>
         <p id="timer-label">Your workout begins after the 30-second get-ready countdown.</p>
+        <div id="player-coach"></div>
+        <p id="player-dose"></p>
       </section>
       <div class="voice-coach-bar">
         <div class="voice-coach-copy">
@@ -2734,7 +2734,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       equipmentDetails: {},
       workout: [], program: [], programPage: 0, programStyle: "balanced", rounds: 3,
       sessionQueue: [], sessionQueueIndex: 0,
-      playerIndex: 0, playerSet: 1, playerTotalSets: 3, timer: 30, timerId: null, timerOnComplete: null, playerPhase: "idle", profile: null,
+      playerIndex: 0, playerSet: 1, playerTotalSets: 3, timer: 30, timerId: null, timerOnComplete: null, setElapsed: 0, playerPhase: "idle", profile: null,
       sessionPaused: false, pausedPhaseLabel: "", pausedTimerLabel: "", pausedActionDisabled: false, pausedVoiceCommands: false, quitWasAutoPaused: false, savedSession: null,
       restDuration: 120, workoutStartedAt: null, lastWorkoutSummary: "",
       profileName: "", profileImageUrl: "",
@@ -2817,8 +2817,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.22";
-    const LYNXOS_APP_VERSION_CODE = 38; // BUMP every release or the update banner never fires
+    const LYNXOS_APP_VERSION = "5.23";
+    const LYNXOS_APP_VERSION_CODE = 39; // BUMP every release or the update banner never fires
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
       const help = document.getElementById("health-connect-help");
@@ -5542,6 +5542,21 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       state.timerId = null;
     }
 
+    function startSetElapsedTimer() {
+      stopTimer();
+      state.timerOnComplete = null;
+      const timer = document.getElementById("timer");
+      timer.hidden = false;
+      const label = () => `Set ${state.playerSet} in progress, ${formatTimerSpeech(state.setElapsed)} elapsed`;
+      timer.textContent = formatClock(state.setElapsed);
+      timer.setAttribute("aria-label", label());
+      state.timerId = setInterval(() => {
+        state.setElapsed += 1;
+        timer.textContent = formatClock(state.setElapsed);
+        timer.setAttribute("aria-label", label());
+      }, 1000);
+    }
+
     function stopWorkoutAudio() {
       stopTimer();
       cancelCoachSpeech();
@@ -5718,6 +5733,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       document.getElementById("session-action").disabled = state.pausedActionDisabled;
       if (["ready", "timed-move", "set-rest", "rest"].includes(state.playerPhase) && state.timer > 0 && state.timerOnComplete) {
         startCountdownInterval(state.playerPhase, state.timerOnComplete);
+      } else if (state.playerPhase === "exercise") {
+        startSetElapsedTimer();
       }
       syncSessionManagement();
       resumeSessionAudio();
@@ -5898,7 +5915,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       syncWorkoutMusic();
       renderSessionExercise();
       document.getElementById("session-phase").textContent = `Set ${state.playerSet} in progress`;
-      document.getElementById("timer").hidden = true;
+      state.setElapsed = 0;
+      startSetElapsedTimer();
       document.getElementById("timer-label").textContent = `Complete set ${state.playerSet} of ${state.playerTotalSets}: ${item.exercise.dose}. Move on when this set is finished.`;
       const hasAnotherSet = state.playerSet < state.playerTotalSets;
       const nextItem = state.sessionQueue[state.sessionQueueIndex + 1];
