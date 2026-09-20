@@ -2770,8 +2770,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.14";
-    const LYNXOS_APP_VERSION_CODE = 30; // BUMP every release or the update banner never fires
+    const LYNXOS_APP_VERSION = "5.15";
+    const LYNXOS_APP_VERSION_CODE = 31; // BUMP every release or the update banner never fires
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
       const help = document.getElementById("health-connect-help");
@@ -2975,7 +2975,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
       if (!raw) return false;
       let data;
-      try { data = JSON.parse(raw); } catch (error) { return false; }
+      if (typeof raw === "object") data = raw;
+      else { try { data = JSON.parse(raw); } catch (error) { return false; } }
       if (!data || data.v !== 1 || !data.profile) return false;
       localSavedAt = Number(data.savedAt) || 0;
       try {
@@ -6487,7 +6488,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const openDialogs = Array.prototype.slice.call(document.querySelectorAll("dialog[open]"));
         const top = openDialogs[openDialogs.length - 1];
         if (top) {
-          if (top.id === "tour-dialog") { finishTour(); return; }
+          if (top.id === "tour-dialog") { markTourSeen(); try { top.close(); } catch (tourCloseError) {} return; }
           if (top.id === "onboarding-dialog") { closeOnboarding(); return; }
           let cancelEvent;
           try { cancelEvent = new Event("cancel", { cancelable: true }); }
@@ -6643,9 +6644,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       cloudUserEmail = (user && user.email) || "";
     }
 
+    // True when local state holds real user progress (a filled profile, logged
+    // workouts, streaks, achievements) rather than fresh-install defaults.
+    // A fresh install must never "win" a cloud restore on timestamps alone,
+    // and an empty local state must never overwrite a cloud backup.
+    function localStateHasUserData() {
+      try {
+        if (state.profile) return true;
+        if ((state.completedWorkouts || 0) > 0) return true;
+        if ((state.workoutStreak || 0) > 0) return true;
+        if (Array.isArray(state.workoutHistory) && state.workoutHistory.length > 0) return true;
+        if (state.earnedAchievements && state.earnedAchievements.size > 0) return true;
+      } catch (error) {}
+      return false;
+    }
+
     async function pushCloudSnapshot() {
       const sb = gymSupabase();
       if (!sb || !lastPersistSnapshot) return;
+      if (!localStateHasUserData()) return;
       try {
         const session = (await sb.auth.getSession()).data.session;
         if (!session || !session.user) return;
@@ -6680,7 +6697,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const res = await sb.from("gym_data").select("data,updated_at").eq("user_id", session.user.id).maybeSingle();
         if (res.error || !res.data || !res.data.data) return false;
         const cloudTime = Date.parse(res.data.updated_at) || 0;
-        if (cloudTime > localSavedAt && restoreAppState(res.data.data)) {
+        const effectiveLocalTime = localStateHasUserData() ? localSavedAt : 0;
+        if (cloudTime > effectiveLocalTime && restoreAppState(res.data.data)) {
           renderRestoredSession();
           const tour = document.getElementById("tour-dialog");
           if (tour && tour.open) { try { tour.close(); } catch (closeError) {} }
