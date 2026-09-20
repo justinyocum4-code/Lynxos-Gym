@@ -797,6 +797,33 @@ jobs:
               }
 
               @JavascriptInterface
+              fun openHealthSettings(): String {
+                  return try {
+                      val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                          Intent("android.health.connect.action.MANAGE_HEALTH_PERMISSIONS").apply {
+                              putExtra(Intent.EXTRA_PACKAGE_NAME, activity.packageName)
+                          }
+                      } else {
+                          Intent(HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS)
+                      }
+                      lastRequestTimeMs = System.currentTimeMillis()
+                      activity.runOnUiThread {
+                          try {
+                              activity.startActivityForResult(intent, REQUEST_CODE)
+                              toast("Opening Health Connect app permissions. Allow Lynxos Gym, then come back.")
+                          } catch (e: Exception) {
+                              toast("Could not open permission settings: " + (e.message ?: e.javaClass.simpleName))
+                          }
+                      }
+                      "launched"
+                  } catch (e: Exception) {
+                      val msg = "Open settings failed: " + (e.message ?: e.javaClass.simpleName)
+                      toast(msg)
+                      "failed"
+                  }
+              }
+
+              @JavascriptInterface
               fun tryPermissionVariants(): String {
                   return try {
                       if (HealthConnectClient.getSdkStatus(activity) != HealthConnectClient.SDK_AVAILABLE) {
