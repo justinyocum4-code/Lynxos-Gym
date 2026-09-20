@@ -2817,8 +2817,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.23";
-    const LYNXOS_APP_VERSION_CODE = 39; // BUMP every release or the update banner never fires
+    const LYNXOS_APP_VERSION = "5.24";
+    const LYNXOS_APP_VERSION_CODE = 40; // BUMP every release or the update banner never fires
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
       const help = document.getElementById("health-connect-help");
@@ -5326,7 +5326,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             state.recognitionRestart = true;
             try { state.recognition.stop(); } catch (_) {}
           }
-          try { nativeTts.speak(String(message)); } catch (error) {}
+          try {
+            const estimatedMs = Math.min(30000, Math.max(2500, String(message).length * 70));
+            duckMusicFor(estimatedMs);
+            nativeTts.speak(String(message));
+          } catch (error) {}
           return;
         }
         const utterance = new SpeechSynthesisUtterance(message);
@@ -5935,7 +5939,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       syncSessionManagement();
       if (announce) {
         playStartSignal();
-        announceSession(setIntro);
+        announceSession(setIntro, 600);
       }
     }
 
