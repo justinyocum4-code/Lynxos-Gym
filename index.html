@@ -2770,8 +2770,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.13";
-    const LYNXOS_APP_VERSION_CODE = 29; // BUMP every release or the update banner never fires
+    const LYNXOS_APP_VERSION = "5.14";
+    const LYNXOS_APP_VERSION_CODE = 30; // BUMP every release or the update banner never fires
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
       const help = document.getElementById("health-connect-help");
@@ -6729,7 +6729,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           const label = document.getElementById("update-banner-text");
           if (label) label.textContent = "A new version of Lynxos Gym is ready (" + d.tag_name + "). You're on " + LYNXOS_APP_VERSION + ".";
           const btn = document.getElementById("update-now");
-          if (btn) btn.addEventListener("click", function () {
+          if (btn) btn.onclick = function () {
             try {
               if (typeof LynxosDownloader !== "undefined" && LynxosDownloader.download) {
                 LynxosDownloader.download(apk, "lynxos-gym.apk");
@@ -6738,7 +6738,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
               }
             } catch (error) {}
             window.open(apk, "_blank");
-          });
+          };
           banner.hidden = false;
           banner.style.display = "block";
         })
@@ -7068,6 +7068,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     initTvWelcome();
     initTvSync();
     checkForGymUpdate();
+    // Re-check whenever the app comes back to the foreground (v5.14): a release
+    // published while the app sat open in the background is picked up on return.
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden) checkForGymUpdate();
+    });
     if (!isTvDevice() && !restoredSession && !hasSeenTour()) openTour("onboarding");
   </script>
 </body>
