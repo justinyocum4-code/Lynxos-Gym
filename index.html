@@ -909,14 +909,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     .bottom-nav-list {
       width: min(760px, 100%); min-height: 74px; margin: 0 auto; padding: 0;
-      display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); list-style: none;
+      display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); list-style: none;
     }
     .bottom-nav-item { min-width: 0; }
     .bottom-nav-link {
       width: 100%; min-height: 74px; padding: .5rem .25rem .42rem; border: 0; border-top: 4px solid transparent;
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .18rem;
       background: transparent; color: #cde4e1; text-decoration: none; cursor: pointer;
-      font-weight: 700; font-size: .82rem; line-height: 1.1;
+      font: inherit; font-weight: 700; font-size: .82rem; line-height: 1.1;
     }
     .bottom-nav-link svg {
       width: 1.55rem; height: 1.55rem; fill: none; stroke: currentColor; stroke-width: 2;
@@ -1501,6 +1501,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <button class="bottom-nav-link" type="button" id="bottom-profile" aria-label="Open profile and settings">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4.5 21c.7-4.3 3.2-6.5 7.5-6.5s6.8 2.2 7.5 6.5"/></svg>
           <span>Profile</span>
+        </button>
+      </li>
+      <li class="bottom-nav-item">
+        <button class="bottom-nav-link" type="button" id="nav-check-updates" aria-label="Check for updates">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+          <span>Updates</span>
         </button>
       </li>
     </ul>
@@ -2821,8 +2827,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.29";
-    const LYNXOS_APP_VERSION_CODE = 45; // BUMP every release or the update banner never fires
+    const LYNXOS_APP_VERSION = "5.30";
+    const LYNXOS_APP_VERSION_CODE = 46; // BUMP every release or the update banner never fires
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
       const help = document.getElementById("health-connect-help");
@@ -6811,6 +6817,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
     document.getElementById("hero-check-updates")?.addEventListener("click", () => checkForGymUpdate(true));
     document.getElementById("builder-check-updates")?.addEventListener("click", () => checkForGymUpdate(true));
+    document.getElementById("nav-check-updates")?.addEventListener("click", () => checkForGymUpdate(true));
     document.querySelectorAll("[data-program-destination]").forEach(button => button.addEventListener("click", () => {
       const destination = button.dataset.programDestination;
       programDialog.close();
