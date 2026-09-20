@@ -2827,8 +2827,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.30";
-    const LYNXOS_APP_VERSION_CODE = 46; // BUMP every release or the update banner never fires
+    const LYNXOS_APP_VERSION = "5.31";
+    const LYNXOS_APP_VERSION_CODE = 47; // BUMP every release or the update banner never fires
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
       const help = document.getElementById("health-connect-help");
@@ -7161,7 +7161,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         banner.style.display = "block";
       }
       if (manual) showNotice("Checking for updates…", "OK", dismissBanner);
-      fetch("https://api.github.com/repos/justinyocum4-code/Lynxos-Gym/releases/latest")
+      // v5.31: cache-buster — some WebViews serve a stale cached API response,
+      // which made the checker wrongly report "latest version". The timestamp
+      // query forces a fresh response every time.
+      fetch("https://api.github.com/repos/justinyocum4-code/Lynxos-Gym/releases/latest?nocache=" + Date.now())
         .then(function (r) { return r.json(); })
         .then(function (d) {
           if (!d || !d.tag_name) {
