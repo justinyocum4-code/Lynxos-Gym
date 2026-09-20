@@ -2847,8 +2847,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.33";
-    const LYNXOS_APP_VERSION_CODE = 49; // BUMP every release or the update banner never fires
+    const LYNXOS_APP_VERSION = "5.34";
+    const LYNXOS_APP_VERSION_CODE = 50; // BUMP every release or the update banner never fires
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
       const help = document.getElementById("health-connect-help");
@@ -6854,7 +6854,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     document.getElementById("builder-check-updates")?.addEventListener("click", () => checkForGymUpdate(true));
     document.getElementById("settings-check-updates")?.addEventListener("click", () => {
       returnFromProfile();
-      checkForGymUpdate(true);
+      // v5.34: delay so the dialog fully closes before the live region
+      // updates — otherwise TalkBack misses the announcement.
+      setTimeout(() => checkForGymUpdate(true), 400);
     });
     document.getElementById("profile-tabbtn")?.addEventListener("click", () => selectProfileTab("profile"));
     document.getElementById("settings-tabbtn")?.addEventListener("click", () => selectProfileTab("settings"));
@@ -7191,14 +7193,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         banner.style.display = "none";
       }
       function showNotice(text, buttonText, onButton) {
+        // v5.34: unhide first, then set text — TalkBack only announces
+        // live-region changes made while the region is rendered.
+        banner.hidden = false;
+        banner.style.display = "block";
         if (label) label.textContent = text;
         if (btn) {
           btn.textContent = buttonText;
           btn.style.display = "";
           btn.onclick = onButton;
         }
-        banner.hidden = false;
-        banner.style.display = "block";
       }
       if (manual) showNotice("Checking for updates…", "OK", dismissBanner);
       // v5.31: cache-buster — some WebViews serve a stale cached API response,
