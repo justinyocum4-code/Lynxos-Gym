@@ -2770,8 +2770,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.15";
-    const LYNXOS_APP_VERSION_CODE = 31; // BUMP every release or the update banner never fires
+    const LYNXOS_APP_VERSION = "5.16";
+    const LYNXOS_APP_VERSION_CODE = 32; // BUMP every release or the update banner never fires
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
       const help = document.getElementById("health-connect-help");
@@ -6490,6 +6490,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (top) {
           if (top.id === "tour-dialog") { markTourSeen(); try { top.close(); } catch (tourCloseError) {} return; }
           if (top.id === "onboarding-dialog") { closeOnboarding(); return; }
+          if (top.id === "detail-dialog") { returnFromDetail(); return; }
           let cancelEvent;
           try { cancelEvent = new Event("cancel", { cancelable: true }); }
           catch (e) {
