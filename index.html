@@ -2176,10 +2176,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
               <span id="health-connect-help">Sync finished workouts to Health Connect.</span>
             </div>
             <button class="voice-coach-toggle" type="button" id="health-connect-toggle" aria-pressed="false" aria-describedby="health-connect-help">Connect</button>
-            <button class="voice-coach-toggle" type="button" id="health-connect-diagnose" aria-describedby="health-connect-help">Diagnose</button>
-            <button class="voice-coach-toggle" type="button" id="health-connect-tryfix" aria-describedby="health-connect-help">Try fix</button>
-            <button class="voice-coach-toggle" type="button" id="health-connect-openapp" aria-describedby="health-connect-help">Open HC app</button>
-            <button class="voice-coach-toggle" type="button" id="health-connect-permissions" aria-describedby="health-connect-help">App permissions</button>
           </div>
           <div>
             <p class="settings-label" id="profile-rest-label">Default rest between sets</p>
@@ -2821,8 +2817,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.21";
-    const LYNXOS_APP_VERSION_CODE = 37; // BUMP every release or the update banner never fires
+    const LYNXOS_APP_VERSION = "5.22";
+    const LYNXOS_APP_VERSION_CODE = 38; // BUMP every release or the update banner never fires
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
       const help = document.getElementById("health-connect-help");
@@ -6659,10 +6655,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     document.getElementById("voice-coach-toggle").addEventListener("click", toggleVoiceCoach);
     document.getElementById("profile-voice-toggle").addEventListener("click", toggleVoiceCoach);
     document.getElementById("health-connect-toggle").addEventListener("click", toggleHealthConnect);
-    document.getElementById("health-connect-diagnose").addEventListener("click", diagnoseHealthConnect);
-    document.getElementById("health-connect-tryfix").addEventListener("click", tryHealthConnectFix);
-    document.getElementById("health-connect-openapp").addEventListener("click", openHealthConnectApp);
-    document.getElementById("health-connect-permissions").addEventListener("click", openHealthConnectSettings);
     window.addEventListener("lynxos-health-result", () => {
       syncHealthConnectRow();
       renderAppInfo();
