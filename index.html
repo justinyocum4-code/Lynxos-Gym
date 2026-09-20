@@ -1060,7 +1060,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <h1>Your body. Your gear. A smarter way forward.</h1>
         <p>Build a four-week training program around the equipment you have, from dumbbells and kettlebells to bands, a bench, or a jump rope. Your lifelike animated coach demonstrates every movement and gives one short cue at a time.</p>
         <div class="hero-actions">
-          <a class="primary" href="#builder">Build my workout</a>
+          <a class="primary" href="#builder" id="hero-build-link">Build my workout</a>
           <a class="secondary" href="#library">Browse movements</a>
           <button class="secondary" type="button" data-guide-section="nutrition" aria-label="Open nutrition guidance">Nutrition guidance</button>
           <button class="secondary share-app" type="button" aria-label="Share Lynxos Gym with another person" aria-describedby="hero-share-status">Share this app</button>
@@ -2817,8 +2817,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.24";
-    const LYNXOS_APP_VERSION_CODE = 40; // BUMP every release or the update banner never fires
+    const LYNXOS_APP_VERSION = "5.25";
+    const LYNXOS_APP_VERSION_CODE = 41; // BUMP every release or the update banner never fires
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
       const help = document.getElementById("health-connect-help");
@@ -3234,6 +3234,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
 
     function closeAppSection(restore = true) {
+      syncBuilderVisibility();
       const returnContext = appSectionReturn;
       document.body.classList.remove("app-screen-view");
       document.getElementById("screen-header").hidden = true;
@@ -3255,7 +3256,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       navScrollFrame = null;
       if (activeAppSection || onboardingDialog.open || profileDialog.open) return;
       const marker = window.innerHeight * .36;
-      const sections = ["builder", "library", "nutrition", "learn", "achievements"].map(id => document.getElementById(id));
+      const sections = ["builder", "library", "nutrition", "learn", "achievements"].map(id => document.getElementById(id)).filter(section => section && !section.hidden);
       let active = sections[0];
       sections.forEach(section => {
         if (section.getBoundingClientRect().top <= marker) active = section;
@@ -3327,6 +3328,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const progress = record ? `${completedHardWorkoutCount()} of ${hardWorkoutCount()} four-week workouts complete` : "No active program";
       document.getElementById("program-manager-status").textContent = message || `${record?.name || "Program"}: ${progress}. Programs stay available while this page is open.`;
       renderCurrentPlanCard();
+      syncBuilderVisibility();
     }
 
     function hasUsablePlan(record) {
@@ -3338,6 +3340,21 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function hasSavedProgram() {
       if (hasUsablePlan(activeProgramRecord())) return true;
       return Array.isArray(state.program) && state.program.length > 0;
+    }
+    // v5.25: the "Build a program that fits" builder screen kept popping up for
+    // Justin. Once a program exists the builder stays hidden; rebuilding still
+    // works from the program dialog's own navigation.
+    function syncBuilderVisibility() {
+      const hasProgram = hasSavedProgram();
+      const builder = document.getElementById("builder");
+      if (builder) builder.hidden = hasProgram && activeAppSection !== "builder";
+      const heroBuild = document.getElementById("hero-build-link");
+      if (heroBuild) {
+        heroBuild.textContent = hasProgram ? "Open my program" : "Build my workout";
+        heroBuild.setAttribute("aria-label", hasProgram ? "Open my workout program" : "Build my workout");
+      }
+      const skipBuilder = document.querySelector('.skip-link[href="#builder"]');
+      if (skipBuilder) skipBuilder.hidden = hasProgram;
     }
     function renderCurrentPlanCard() {
       const card = document.getElementById("current-plan-card");
@@ -5952,6 +5969,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return `Rest before ${exercise?.name || "the next exercise"}, set 1 of ${state.playerTotalSets}`;
     }
 
+    // v5.25: names the movement coming up next so the voice coach gives advance
+    // warning instead of announcing each movement only as it starts.
+    function upcomingAnnouncement(phase) {
+      if (phase === "ready") {
+        const first = state.sessionQueue[0];
+        return first ? `${first.exercise.name} starts the warm-up` : "";
+      }
+      const next = state.sessionQueue[state.sessionQueueIndex + 1];
+      if (!next) return "";
+      if (phase === "set-rest") return `set ${state.playerSet + 1} of ${next.exercise.name}`;
+      if (phase === "rest") return `${next.exercise.name}, set 1`;
+      return next.exercise.name;
+    }
+
     function startCountdownInterval(phase, onComplete) {
       stopTimer();
       state.timerOnComplete = onComplete;
@@ -5965,7 +5996,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const readyCheckpoint = phase === "ready" && [20, 10].includes(state.timer);
         const timedCheckpoint = phase === "timed-move" && [30, 15].includes(state.timer);
         const restCheckpoint = ["rest", "set-rest"].includes(phase) && [60, 30, 10].includes(state.timer);
+        const nextUpCheckpoint = (phase === "timed-move" && state.timer === 15)
+          || (["rest", "set-rest"].includes(phase) && state.timer === 10)
+          || (phase === "ready" && state.timer === 10);
         if (finalCount) announceSession(String(state.timer));
+        else if (nextUpCheckpoint) {
+          const upNext = upcomingAnnouncement(phase);
+          const remaining = formatTimerSpeech(state.timer);
+          announceSession(upNext ? `${remaining} remaining. Get ready: ${upNext}.` : `${remaining} remaining.`);
+        }
         else if (readyCheckpoint || timedCheckpoint || restCheckpoint) announceSession(`${formatTimerSpeech(state.timer)} remaining.`);
         if (state.timer <= 0) {
           stopTimer();
@@ -6502,6 +6541,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       stopTimer();
       const completedQuickSession = state.quickSession;
       completeCurrentWorkout();
+      const finishedTrainingBlock = !completedQuickSession && state.deloadSuggested && !state.program[state.programPage]?.isDeload;
+      // v5.25: finishing a workout moves the program to the next day automatically,
+      // so the next session opens on day two instead of replaying the same day.
+      let advancedToNext = false;
+      if (!completedQuickSession && state.programPage < state.program.length - 1) {
+        state.programPage += 1;
+        saveActiveProgramRecord();
+        syncProgramManager();
+        advancedToNext = true;
+      }
+      const nextPage = advancedToNext ? state.program[state.programPage] : null;
+      const nextDayText = nextPage
+        ? (nextPage.isDeload ? "The easier deload workout is up next." : `Day ${nextPage.day} of week ${nextPage.week} is up next.`)
+        : "";
       saveWorkoutToHistory();
       state.playerPhase = "complete";
       state.sessionPaused = false;
@@ -6516,18 +6569,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       document.getElementById("player-coach").innerHTML = "";
       document.getElementById("player-dose").textContent = `You completed the warm-up, workout, and cool-down, and now have ${state.earnedAchievements.size} badge${state.earnedAchievements.size === 1 ? "" : "s"}.`;
       document.getElementById("timer").hidden = true;
-      const finishedTrainingBlock = !completedQuickSession && state.deloadSuggested && !state.program[state.programPage]?.isDeload;
       document.getElementById("timer-label").textContent = completedQuickSession
         ? "Your one-off workout is complete. Your 4-week plan is unchanged."
         : finishedTrainingBlock
           ? "Your four training weeks are complete. An optional easier deload week is ready next in this program."
-          : "Share your summary or tell us whether this plan suits you.";
+          : advancedToNext
+            ? nextDayText
+            : "Share your summary or tell us whether this plan suits you.";
       document.getElementById("session-swap").hidden = true;
       document.getElementById("share-workout").hidden = false;
       setSessionAction("Close workout", () => playerDialog.close());
       document.getElementById("workout-feedback").hidden = completedQuickSession;
       if (!completedQuickSession) renderWorkoutFeedback();
-      announceSession(`Workout complete. Warm-up and cool-down finished. Great job. You now have ${state.earnedAchievements.size} badge${state.earnedAchievements.size === 1 ? "" : "s"} earned.`);
+      announceSession(`Workout complete. Warm-up and cool-down finished. Great job. ${nextDayText} You now have ${state.earnedAchievements.size} badge${state.earnedAchievements.size === 1 ? "" : "s"} earned.`);
       logWorkoutToHealthConnect();
     }
 
@@ -6733,6 +6787,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
       openAppSection(link.dataset.navSection);
     }));
+    document.getElementById("hero-build-link")?.addEventListener("click", event => {
+      if (hasSavedProgram()) { event.preventDefault(); openProgram(); }
+    });
     document.querySelectorAll("[data-program-destination]").forEach(button => button.addEventListener("click", () => {
       const destination = button.dataset.programDestination;
       programDialog.close();
@@ -6740,6 +6797,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         openProfile({ type: "program" });
         return;
       }
+      // v5.25: the builder hides once a program exists; unhide it for rebuilds.
+      if (destination === "builder") document.getElementById("builder").hidden = false;
       openAppSection(destination, { type: "program" });
     }));
     window.addEventListener("scroll", queueNavigationUpdate, { passive: true });
