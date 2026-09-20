@@ -2818,8 +2818,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.26";
-    const LYNXOS_APP_VERSION_CODE = 42; // BUMP every release or the update banner never fires
+    const LYNXOS_APP_VERSION = "5.27";
+    const LYNXOS_APP_VERSION_CODE = 43; // BUMP every release or the update banner never fires
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
       const help = document.getElementById("health-connect-help");
@@ -7072,7 +7072,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         initializePrograms();
       }
       syncProgramManager();
-      openProgram();
+      // v5.27: no longer pops the program dialog open on every launch. The
+      // dialog used to open by itself at startup (and after every cloud
+      // restore), covering the home screen and trapping the screen reader
+      // inside it, so the new Check for updates button couldn't be reached.
+      // The program opens only when Justin asks for it now.
     }
 
     async function pullCloudSnapshot() {
