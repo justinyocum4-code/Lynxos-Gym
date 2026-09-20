@@ -2820,8 +2820,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.17";
-    const LYNXOS_APP_VERSION_CODE = 33; // BUMP every release or the update banner never fires
+    const LYNXOS_APP_VERSION = "5.18";
+    const LYNXOS_APP_VERSION_CODE = 34; // BUMP every release or the update banner never fires
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
       const help = document.getElementById("health-connect-help");
@@ -3324,6 +3324,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
     function hasUsablePlan(record) {
       return Boolean(record && Array.isArray(record.plan) && record.plan.length);
+    }
+    // v5.18: the Workout plan tab should open the saved program, not the builder.
+    // Fall back to state.program itself so an older cloud snapshot that lacks
+    // program records still counts as "has a program".
+    function hasSavedProgram() {
+      if (hasUsablePlan(activeProgramRecord())) return true;
+      return Array.isArray(state.program) && state.program.length > 0;
     }
     function renderCurrentPlanCard() {
       const card = document.getElementById("current-plan-card");
@@ -6691,6 +6698,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
     document.querySelectorAll(".bottom-nav-link[data-nav-section]").forEach(link => link.addEventListener("click", event => {
       event.preventDefault();
+      // v5.18: the Workout plan tab opens the saved program directly instead of
+      // the "Build a program that fits" builder screen. The builder stays one tap
+      // away on the program screen's own navigation if he wants to rebuild.
+      if (link.dataset.navSection === "builder" && hasSavedProgram()) {
+        openProgram();
+        return;
+      }
       openAppSection(link.dataset.navSection);
     }));
     document.querySelectorAll("[data-program-destination]").forEach(button => button.addEventListener("click", () => {
@@ -6952,6 +6966,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       renderProfileSummary();
       renderPlan(document.getElementById("focus").value);
       renderAchievements();
+      // v5.18: an older cloud snapshot may have the plan in state.program but no
+      // program records. Build one from the restored plan so the current-plan
+      // card and the program tab both see it.
+      if (!state.programs.length && Array.isArray(state.program) && state.program.length) {
+        initializePrograms();
+      }
       syncProgramManager();
       openProgram();
     }
