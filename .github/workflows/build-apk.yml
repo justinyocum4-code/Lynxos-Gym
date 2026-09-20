@@ -488,8 +488,13 @@ jobs:
                   if (requestCode == LynxosHealth.REQUEST_CODE) {
                       try {
                           long secs = (System.currentTimeMillis() - LynxosHealth.Companion.getLastRequestTimeMs()) / 1000;
-                          String dataInfo = (data == null) ? "no return data"
-                              : "return extras=" + (data.getExtras() == null ? "none" : String.valueOf(data.getExtras().keySet()));
+                          String dataInfo;
+                          try {
+                              java.util.Set<String> granted = LynxosHealth.Companion.getPermissionContract().parseResult(resultCode, data);
+                              dataInfo = "granted " + granted.size() + " of 2 permissions";
+                          } catch (Exception e) {
+                              dataInfo = (data == null) ? "no return data" : "result parse failed";
+                          }
                           Toast.makeText(this, "Health Connect answered: result=" + resultCode + " after " + secs + " seconds. " + dataInfo, Toast.LENGTH_LONG).show();
                           webView.evaluateJavascript("window.dispatchEvent(new Event('lynxos-health-result'))", null);
                       } catch (Exception ignored) {}
@@ -798,20 +803,15 @@ jobs:
                           toast("Health Connect is not available.")
                           return "not-available"
                       }
-                      val base: Intent = permissionContract.createIntent(activity, PERMISSIONS)
-                      // Variant 1: with NEW_TASK flag via startActivityForResult
-                      val v1 = Intent(base).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
-                      // Variant 2: no proto extra, just action+package
-                      val v2 = Intent("androidx.health.ACTION_REQUEST_PERMISSIONS").apply {
-                          setPackage("com.google.android.apps.healthdata")
-                      }
-                      // We'll try v1 first, then v2. Report which was tried.
-                      // For now, try v1 and toast the plan.
+                      // Fixed path: launch the exact intent the Health Connect SDK
+                      // builds for this Android version (system permission dialog
+                      // on Android 14+, Health Connect app on older versions).
+                      val intent: Intent = permissionContract.createIntent(activity, PERMISSIONS)
                       lastRequestTimeMs = System.currentTimeMillis()
                       activity.runOnUiThread {
                           try {
-                              activity.startActivityForResult(v1, REQUEST_CODE)
-                              toast("Trying variant with NEW_TASK flag...")
+                              activity.startActivityForResult(intent, REQUEST_CODE)
+                              toast("Trying the direct Health Connect request...")
                           } catch (e: Exception) {
                               toast("Variant failed: " + (e.message ?: e.javaClass.simpleName))
                           }
@@ -831,40 +831,23 @@ jobs:
                           toast("Health Connect is not available on this phone.")
                           "not-available"
                       } else {
-                          val explicitIntent: Intent = permissionContract.createIntent(activity, PERMISSIONS)
-                          val pm = activity.packageManager
-                          // Diagnostic: which components actually handle this intent?
-                          val explicitMatches = pm.queryIntentActivities(explicitIntent, 0)
-                          val implicitIntent = Intent(explicitIntent).apply { `package` = null }
-                          val implicitMatches = pm.queryIntentActivities(implicitIntent, 0)
-                          fun describe(list: List<android.content.pm.ResolveInfo>): String {
-                              if (list.isEmpty()) return "none"
-                              return list.joinToString(";") {
-                                  it.activityInfo.packageName + "/" + it.activityInfo.name.substringAfterLast('.')
+                          // Launch the exact intent the Health Connect SDK builds for
+                          // this Android version: on Android 14+ it is the system
+                          // permission dialog, on older versions it goes through the
+                          // Health Connect app. No manual handler lookup: the SDK
+                          // already targets the right component, and second-guessing
+                          // it sent the request to the wrong place.
+                          val intent: Intent = permissionContract.createIntent(activity, PERMISSIONS)
+                          lastRequestTimeMs = System.currentTimeMillis()
+                          activity.runOnUiThread {
+                              try {
+                                  activity.startActivityForResult(intent, REQUEST_CODE)
+                                  toast("Opening Health Connect...")
+                              } catch (e: Exception) {
+                                  toast("Could not open Health Connect: " + (e.message ?: e.javaClass.simpleName))
                               }
                           }
-                          val diag = "HC handlers: with-package=" + describe(explicitMatches) +
-                              ". Without-package=" + describe(implicitMatches)
-                          lastIntentDiag = diag
-                          toast(diag)
-                          // Prefer the explicit provider target; fall back to implicit
-                          // resolution if the provider package handles nothing.
-                          val sendIntent = if (explicitMatches.isNotEmpty()) explicitIntent else implicitIntent
-                          if (explicitMatches.isEmpty() && implicitMatches.isEmpty()) {
-                              toast("No app on this phone can show the Health Connect permission screen.")
-                              "no-handler"
-                          } else {
-                              lastRequestTimeMs = System.currentTimeMillis()
-                              activity.runOnUiThread {
-                                  try {
-                                      activity.startActivityForResult(sendIntent, REQUEST_CODE)
-                                      toast("Opening Health Connect...")
-                                  } catch (e: Exception) {
-                                      toast("Could not open Health Connect: " + (e.message ?: e.javaClass.simpleName))
-                                  }
-                              }
-                              "launched"
-                          }
+                          "launched"
                       }
                   } catch (e: Exception) {
                       val msg = "Permission request failed: " + (e.message ?: e.javaClass.simpleName)
