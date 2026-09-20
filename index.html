@@ -1044,7 +1044,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   </style>
 </head>
 <body>
-  <a class="skip-link" href="#builder">Skip to workout builder</a>
+  <a class="skip-link" href="#builder" hidden>Skip to workout builder</a>
   <div id="update-banner" hidden role="status" aria-live="polite" style="background:#c9a227;color:#111;padding:12px 16px;text-align:center;font-weight:bold;">
     <span id="update-banner-text"></span>
     <div style="margin-top:8px;">
@@ -1060,7 +1060,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <h1>Your body. Your gear. A smarter way forward.</h1>
         <p>Build a four-week training program around the equipment you have, from dumbbells and kettlebells to bands, a bench, or a jump rope. Your lifelike animated coach demonstrates every movement and gives one short cue at a time.</p>
         <div class="hero-actions">
-          <a class="primary" href="#builder" id="hero-build-link">Build my workout</a>
+          <a class="primary" href="#builder" id="hero-build-link">Open my program</a>
+          <button class="secondary" type="button" id="hero-check-updates">Check for updates</button>
           <a class="secondary" href="#library">Browse movements</a>
           <button class="secondary" type="button" data-guide-section="nutrition" aria-label="Open nutrition guidance">Nutrition guidance</button>
           <button class="secondary share-app" type="button" aria-label="Share Lynxos Gym with another person" aria-describedby="hero-share-status">Share this app</button>
@@ -1082,7 +1083,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <button type="button" id="screen-back" aria-label="Go back to the previous screen">← Back</button>
       <strong id="screen-title">Workout Plan</strong>
     </div>
-    <section id="builder" aria-labelledby="builder-title">
+    <section id="builder" aria-labelledby="builder-title" hidden>
       <div class="section-head">
         <div>
           <h2 id="builder-title">Build a program that fits</h2>
@@ -2817,8 +2818,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.25";
-    const LYNXOS_APP_VERSION_CODE = 41; // BUMP every release or the update banner never fires
+    const LYNXOS_APP_VERSION = "5.26";
+    const LYNXOS_APP_VERSION_CODE = 42; // BUMP every release or the update banner never fires
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
       const help = document.getElementById("health-connect-help");
@@ -5571,11 +5572,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const label = () => `Set ${state.playerSet} in progress, ${formatTimerSpeech(state.setElapsed)} elapsed`;
       timer.textContent = formatClock(state.setElapsed);
       timer.setAttribute("aria-label", label());
+      const startedAt = Date.now() - (state.setElapsed || 0) * 1000;
       state.timerId = setInterval(() => {
-        state.setElapsed += 1;
-        timer.textContent = formatClock(state.setElapsed);
-        timer.setAttribute("aria-label", label());
-      }, 1000);
+        const elapsed = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
+        if (elapsed !== state.setElapsed) {
+          state.setElapsed = elapsed;
+          timer.textContent = formatClock(state.setElapsed);
+          timer.setAttribute("aria-label", label());
+        }
+      }, 250);
     }
 
     function stopWorkoutAudio() {
@@ -5956,7 +5961,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       syncSessionManagement();
       if (announce) {
         playStartSignal();
-        announceSession(setIntro, 600);
+        // v5.26: shorter delay keeps the voice tight to the start beep.
+        announceSession(setIntro, 250);
       }
     }
 
@@ -5983,35 +5989,42 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return next.exercise.name;
     }
 
+    // v5.26: deadline-based countdown. Remaining time is derived from the clock
+    // (Date.now) instead of decrementing a counter each tick, so the timer and
+    // voice announcements can't drift late over a long workout.
     function startCountdownInterval(phase, onComplete) {
       stopTimer();
       state.timerOnComplete = onComplete;
       const timer = document.getElementById("timer");
       const context = countdownContext(phase);
+      const endsAt = Date.now() + Math.max(0, state.timer) * 1000;
       state.timerId = setInterval(() => {
-        state.timer -= 1;
-        timer.textContent = formatClock(state.timer);
-        timer.setAttribute("aria-label", `${context}, ${formatTimerSpeech(state.timer)} remaining`);
-        const finalCount = state.timer >= 1 && state.timer <= 5;
-        const readyCheckpoint = phase === "ready" && [20, 10].includes(state.timer);
-        const timedCheckpoint = phase === "timed-move" && [30, 15].includes(state.timer);
-        const restCheckpoint = ["rest", "set-rest"].includes(phase) && [60, 30, 10].includes(state.timer);
-        const nextUpCheckpoint = (phase === "timed-move" && state.timer === 15)
-          || (["rest", "set-rest"].includes(phase) && state.timer === 10)
-          || (phase === "ready" && state.timer === 10);
-        if (finalCount) announceSession(String(state.timer));
-        else if (nextUpCheckpoint) {
-          const upNext = upcomingAnnouncement(phase);
-          const remaining = formatTimerSpeech(state.timer);
-          announceSession(upNext ? `${remaining} remaining. Get ready: ${upNext}.` : `${remaining} remaining.`);
+        const remaining = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+        if (remaining !== state.timer) {
+          state.timer = remaining;
+          timer.textContent = formatClock(state.timer);
+          timer.setAttribute("aria-label", `${context}, ${formatTimerSpeech(state.timer)} remaining`);
+          const finalCount = state.timer >= 1 && state.timer <= 5;
+          const readyCheckpoint = phase === "ready" && [20, 10].includes(state.timer);
+          const timedCheckpoint = phase === "timed-move" && [30, 15].includes(state.timer);
+          const restCheckpoint = ["rest", "set-rest"].includes(phase) && [60, 30, 10].includes(state.timer);
+          const nextUpCheckpoint = (phase === "timed-move" && state.timer === 15)
+            || (["rest", "set-rest"].includes(phase) && state.timer === 10)
+            || (phase === "ready" && state.timer === 10);
+          if (finalCount) announceSession(String(state.timer));
+          else if (nextUpCheckpoint) {
+            const upNext = upcomingAnnouncement(phase);
+            const remainingSpeech = formatTimerSpeech(state.timer);
+            announceSession(upNext ? `${remainingSpeech} remaining. Get ready: ${upNext}.` : `${remainingSpeech} remaining.`);
+          }
+          else if (readyCheckpoint || timedCheckpoint || restCheckpoint) announceSession(`${formatTimerSpeech(state.timer)} remaining.`);
         }
-        else if (readyCheckpoint || timedCheckpoint || restCheckpoint) announceSession(`${formatTimerSpeech(state.timer)} remaining.`);
-        if (state.timer <= 0) {
+        if (remaining <= 0) {
           stopTimer();
           state.timerOnComplete = null;
           onComplete();
         }
-      }, 1000);
+      }, 250);
     }
 
     function runCountdown(seconds, phase, onComplete, startAnnouncement = "") {
@@ -6790,6 +6803,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     document.getElementById("hero-build-link")?.addEventListener("click", event => {
       if (hasSavedProgram()) { event.preventDefault(); openProgram(); }
     });
+    document.getElementById("hero-check-updates")?.addEventListener("click", () => checkForGymUpdate(true));
     document.querySelectorAll("[data-program-destination]").forEach(button => button.addEventListener("click", () => {
       const destination = button.dataset.programDestination;
       programDialog.close();
@@ -7106,21 +7120,47 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
     // ---- In-app updater (v5.13): Update button at the top whenever a newer release exists ----
     const LYNXOS_APK_URL = "https://github.com/justinyocum4-code/Lynxos-Gym/releases/latest/download/app-release.apk";
-    function checkForGymUpdate() {
+    // v5.26: manual=true is the "Check for updates" button on the main screen.
+    // It always reports back: the update banner when a newer release exists,
+    // otherwise a quiet "you're on the latest version" notice.
+    function checkForGymUpdate(manual) {
       const banner = document.getElementById("update-banner");
       if (!banner) return;
+      const label = document.getElementById("update-banner-text");
+      const btn = document.getElementById("update-now");
+      function dismissBanner() {
+        banner.hidden = true;
+        banner.style.display = "none";
+      }
+      function showNotice(text, buttonText, onButton) {
+        if (label) label.textContent = text;
+        if (btn) {
+          btn.textContent = buttonText;
+          btn.style.display = "";
+          btn.onclick = onButton;
+        }
+        banner.hidden = false;
+        banner.style.display = "block";
+      }
+      if (manual) showNotice("Checking for updates…", "OK", dismissBanner);
       fetch("https://api.github.com/repos/justinyocum4-code/Lynxos-Gym/releases/latest")
         .then(function (r) { return r.json(); })
         .then(function (d) {
-          if (!d || !d.tag_name) return;
+          if (!d || !d.tag_name) {
+            if (manual) showNotice("Couldn't check for updates right now. Try again in a bit.", "OK", dismissBanner);
+            return;
+          }
           const m = /v[\d.]+\+(\d+)/.exec(d.tag_name);
-          if (!m) return;
-          if (!(parseInt(m[1], 10) > LYNXOS_APP_VERSION_CODE)) return;
+          if (!m) {
+            if (manual) showNotice("Couldn't check for updates right now. Try again in a bit.", "OK", dismissBanner);
+            return;
+          }
+          if (!(parseInt(m[1], 10) > LYNXOS_APP_VERSION_CODE)) {
+            if (manual) showNotice("You're on the latest version of Lynxos Gym (" + LYNXOS_APP_VERSION + ").", "OK", dismissBanner);
+            return;
+          }
           const apk = (d.assets && d.assets.length && d.assets[0].browser_download_url) || LYNXOS_APK_URL;
-          const label = document.getElementById("update-banner-text");
-          if (label) label.textContent = "A new version of Lynxos Gym is ready (" + d.tag_name + "). You're on " + LYNXOS_APP_VERSION + ".";
-          const btn = document.getElementById("update-now");
-          if (btn) btn.onclick = function () {
+          showNotice("A new version of Lynxos Gym is ready (" + d.tag_name + "). You're on " + LYNXOS_APP_VERSION + ".", "Update", function () {
             try {
               if (typeof LynxosDownloader !== "undefined" && LynxosDownloader.download) {
                 LynxosDownloader.download(apk, "lynxos-gym.apk");
@@ -7129,11 +7169,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
               }
             } catch (error) {}
             window.open(apk, "_blank");
-          };
-          banner.hidden = false;
-          banner.style.display = "block";
+          });
         })
-        .catch(function () { /* offline: stay quiet */ });
+        .catch(function () {
+          if (manual) showNotice("Couldn't check for updates. Check your internet connection and try again.", "OK", dismissBanner);
+          /* automatic check stays quiet offline */
+        });
     }
 
     // ---- TV sync via QR code (v5.11) ----
