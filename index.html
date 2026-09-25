@@ -1149,6 +1149,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <button type="button" data-tv-nav="nutrition">Nutrition Basics</button>
       <button type="button" data-tv-nav="learn">Learn the Basics</button>
       <button type="button" data-tv-nav="achievements">Progress &amp; Achievements</button>
+      <button type="button" data-tv-nav="sync">Sync this TV with my phone</button>
       <button type="button" id="tv-drawer-close">Close menu</button>
     </div>
   </nav>
@@ -1568,8 +1569,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     <div class="tv-welcome-inner">
       <button class="close-btn tv-welcome-close" type="button" id="tv-welcome-close" aria-label="Close TV setup and return to the app" hidden>&times;</button>
       <h1 id="tv-welcome-title" tabindex="-1">Welcome to Lynxos Gym</h1>
-      <p class="tv-welcome-lead">To use Lynxos Gym on your TV, first set up your account on your phone: install Lynxos Gym on your phone and sign in with Google there.</p>
-      <p class="tv-welcome-lead">Then, on this TV, sign in below &mdash; or scan the code with your phone to copy your progress over.</p>
+      <p class="tv-welcome-lead">To put your profile on this TV: on your phone, open Lynxos Gym, go to Profile, then Settings, then Sync to TV. Scan the QR code below with the in-app scanner, or type the 8-character code. If your phone is signed in with Google, this TV will sign in as you automatically.</p>
+      <p class="tv-welcome-lead">You can also sign in on this TV directly below.</p>
       <div id="tv-welcome-google-slot"></div>
       <div id="tv-welcome-qr-slot"></div>
     </div>
@@ -1579,12 +1580,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     <div class="tv-home-inner">
       <h1 id="tv-home-title" tabindex="-1">Lynxos Gym</h1>
       <p class="tv-home-sync" id="tv-home-sync" role="status">Checking sync status&hellip;</p>
-      <div class="tv-home-actions">
-        <button type="button" class="tv-home-btn primary" id="tv-home-start">Start Workout</button>
-        <button type="button" class="tv-home-btn" id="tv-home-programs">Programs</button>
-        <button type="button" class="tv-home-btn" id="tv-home-syncbtn">Sync status</button>
-      </div>
-      <p class="tv-home-hint">D-pad: left opens the menu &middot; OK pauses or resumes a workout &middot; back exits the workout</p>
+      <!-- v5.44: no menu buttons on the TV home — every destination lives in
+           the side panel (D-pad left). -->
+      <p class="tv-home-hint">Press left on your remote to open the menu &middot; OK pauses or resumes a workout &middot; back exits the workout</p>
     </div>
   </section>
 
@@ -2940,7 +2938,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.43";
+    const LYNXOS_APP_VERSION = "5.44";
     const LYNXOS_APP_VERSION_CODE = 59; // BUMP every release or the update banner never fires
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
@@ -7876,23 +7874,42 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const status = document.getElementById("tv-sync-status");
         if (restoreAppState(json)) {
           renderRestoredSession();
+          // v5.44: the phone shares its sign-in session inside the payload —
+          // apply it so this TV is genuinely logged in as the same account,
+          // not just holding a copy of the data.
+          let tvEmail = "";
+          try {
+            const dataObj = (typeof payload === "string") ? JSON.parse(payload) : payload;
+            const tvSession = dataObj && dataObj.__tvSession;
+            if (tvSession && tvSession.access_token && tvSession.refresh_token) {
+              const sres = await sb.auth.setSession({ access_token: tvSession.access_token, refresh_token: tvSession.refresh_token });
+              const user = sres && sres.data && sres.data.session && sres.data.session.user;
+              if (user) {
+                cloudUserEmail = user.email || "";
+                tvEmail = cloudUserEmail;
+                renderGoogleSection();
+              }
+            }
+          } catch (error) { /* state restored; the sign-in just didn't carry over */ }
           unlockTv();
-          if (status) status.textContent = "Synced! Your progress from your phone is now on this TV.";
+          renderTvHomeSync();
+          if (status) status.textContent = tvEmail
+            ? "Synced! Your progress from your phone is now on this TV, signed in as " + tvEmail + "."
+            : "Synced! Your progress from your phone is now on this TV.";
         } else if (status) {
           status.textContent = "Got your data but couldn't apply it. Try sending again from your phone.";
         }
       } catch (error) { /* offline: keep polling */ }
     }
 
+    // v5.44: the Google gate is gone. Signing in is no longer required to
+    // send — the TV gets your progress either way. When you ARE signed in,
+    // the phone pushes the latest state to the cloud first and shares its
+    // sign-in session in the payload, so the TV logs in as the same account
+    // (a real login, not just a copy).
     async function sendProgressToTv() {
       const input = document.getElementById("tv-code-input");
       const status = document.getElementById("phone-sync-status");
-      if (!cloudUserEmail) {
-        if (status) status.textContent = "Sign in with Google first (above), then send. Your TV needs an account set up on this phone.";
-        const signin = document.getElementById("google-signin");
-        if (signin) signin.focus();
-        return;
-      }
       const code = String(input ? input.value : "").toUpperCase().replace(/[^A-Z0-9]/g, "");
       if (code.length !== 8) {
         if (status) status.textContent = "Type the 8-character code shown on your TV.";
@@ -7905,10 +7922,21 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
       if (status) status.textContent = "Sending\u2026";
       try {
+        let tvSession = null;
+        if (cloudUserEmail) {
+          try { await pushCloudSnapshot(); } catch (error) {}
+          try {
+            const sess = (await sb.auth.getSession()).data.session;
+            if (sess && sess.access_token && sess.refresh_token) {
+              tvSession = { access_token: sess.access_token, refresh_token: sess.refresh_token };
+            }
+          } catch (error) {}
+        }
         saveAppState();
         let dataObj;
         try { dataObj = JSON.parse(lastPersistSnapshot || "{}"); }
         catch (error) { dataObj = { raw: lastPersistSnapshot || "" }; }
+        if (tvSession) dataObj.__tvSession = tvSession;
         // v5.37: delete-then-insert instead of upsert. Upsert needs a unique
         // constraint on "code" that older databases may lack (silent failure),
         // and it used to cheerfully "succeed" for mistyped codes no TV was
@@ -7922,7 +7950,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         // The TV deletes the row when it reads it — that is our receipt.
         const pickedUp = await waitForTvPickup(code, 25000);
         if (pickedUp) {
-          if (status) status.textContent = "Your TV got it! Check your TV screen.";
+          if (status) status.textContent = tvSession
+            ? "Your TV got it and signed in as " + cloudUserEmail + ". Check your TV screen."
+            : "Your TV got it! Check your TV screen. Tip: sign in with Google on this phone and send again to also link your cloud account on the TV.";
         } else {
           try { await sb.from("tv_pairings").delete().eq("code", code); } catch (error) {}
           if (status) status.textContent = "Your TV didn't pick that up. Make sure the code on your TV matches, the TV is on the sync screen, and its code hasn't expired — then try again.";
@@ -7984,12 +8014,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       showTvWelcome();
     }
     // v5.38: lean-back TV home sync status line.
+    // v5.44: the home buttons are gone — point at the side panel instead.
     function renderTvHomeSync() {
       const el = document.getElementById("tv-home-sync");
       if (!el || !isTvDevice()) return;
       el.textContent = cloudUserEmail
         ? "Signed in as " + cloudUserEmail + ". Progress syncs from your phone."
-        : "Not signed in. Choose Sync status below to pair with your phone.";
+        : "Not signed in. Press left on your remote to open the menu, then choose Sync this TV with my phone.";
     }
     function initTvWelcome() {
       const closeBtn = document.getElementById("tv-welcome-close");
@@ -8008,17 +8039,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const hcToggle = document.getElementById("health-connect-toggle");
       const hcRow = hcToggle ? hcToggle.closest(".voice-coach-bar") : null;
       if (hcRow) hcRow.hidden = true;
-      // v5.38: lean-back home buttons.
-      const homeStart = document.getElementById("tv-home-start");
-      if (homeStart) homeStart.addEventListener("click", () => {
-        openProgram();
-        const startButton = document.getElementById("start-workout");
-        if (startButton) startButton.click();
-      });
-      const homePrograms = document.getElementById("tv-home-programs");
-      if (homePrograms) homePrograms.addEventListener("click", openProgram);
-      const homeSync = document.getElementById("tv-home-syncbtn");
-      if (homeSync) homeSync.addEventListener("click", showTvWelcome);
+      // v5.44: the TV home carries no menu buttons — navigation lives in the
+      // D-pad-left side panel, so there is nothing to wire up here.
       renderTvHomeSync();
       if (tvIsUnlocked()) {
         const home = document.getElementById("tv-home");
@@ -8238,6 +8260,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           const dest = button.getAttribute("data-tv-nav");
           closeTvDrawer();
           if (dest === "program") { openProgram(); return; }
+          if (dest === "sync") { showTvWelcome(); return; }
           openAppSection(dest);
         });
       });
