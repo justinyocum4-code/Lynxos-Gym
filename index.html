@@ -2940,8 +2940,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.42";
-    const LYNXOS_APP_VERSION_CODE = 58; // BUMP every release or the update banner never fires
+    const LYNXOS_APP_VERSION = "5.43";
+    const LYNXOS_APP_VERSION_CODE = 59; // BUMP every release or the update banner never fires
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
       const help = document.getElementById("health-connect-help");
@@ -5149,8 +5149,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       announceSession(`${previous.name} swapped for ${alternative.name}. ${alternative.cue}`);
     }
 
-    // v5.40: program-screen extras — soreness check-in, missed-day repair,
-    // no-equipment mode, and the explicit builder entry point.
+    // v5.40: program-screen extras — soreness check-in, no-equipment mode,
+    // and the explicit builder entry point. v5.43: missed days sync into the
+    // plan automatically (see renderProgramPage) — no repair choice UI.
     // Single polite announcer for program-screen and settings changes.
     function announce(message) {
       const live = document.getElementById("global-live");
@@ -5192,16 +5193,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           </div>
         </div>`);
       }
-      const missed = daysSinceLastTraining();
-      if (missed >= 2 && state.missedDayDismissed !== today) {
-        parts.push(`<div class="program-extras" role="group" aria-label="Missed day repair">
-          <p><strong>It has been ${missed} days</strong> since your last full workout. Ease back in?</p>
-          <div class="program-extras-actions">
-            <button class="secondary" type="button" data-missed-repair>Catch me up — add rest days</button>
-            <button class="secondary" type="button" data-missed-keep>Keep my place</button>
-          </div>
-        </div>`);
-      }
       parts.push(`<div class="program-extras" role="group" aria-label="Today's options">
         <div class="program-extras-actions">
           ${isRestDay ? "" : `<button class="secondary" type="button" data-no-equipment>No equipment today</button>`}
@@ -5230,16 +5221,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           announce("Recorded: fresh. Have a strong session.");
         }
       }));
-      page.querySelector("[data-missed-repair]")?.addEventListener("click", () => {
-        const missed = Math.min(7, daysSinceLastTraining());
-        shiftPlanForward(missed, `Added ${missed} rest ${missed === 1 ? "day" : "days"} to ease you back in`);
-      });
-      page.querySelector("[data-missed-keep]")?.addEventListener("click", () => {
-        state.missedDayDismissed = todayKey();
-        saveAppState();
-        renderProgramPage(false);
-        announce("Keeping your place. No changes made.");
-      });
       page.querySelector("[data-no-equipment]")?.addEventListener("click", startNoEquipmentSession);
       page.querySelector("[data-rebuild-program]")?.addEventListener("click", () => {
         state.explicitBuilderRequested = true;
@@ -5273,6 +5254,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       startQuickWorkout({ moves, rounds: Math.max(2, (item.rounds || 3) - 1) });
     }
     function renderProgramPage(announce = true) {
+      // v5.43: missed days sync into the plan automatically — no more
+      // "catch me up or keep my place" choice. The plan absorbs the missed
+      // days as rest and the streak is kept.
+      const today = todayKey();
+      const missed = daysSinceLastTraining();
+      if (missed >= 2 && state.missedDayDismissed !== today) {
+        state.missedDayDismissed = today;
+        const add = Math.min(7, missed);
+        shiftPlanForward(add, `It has been ${missed} days since your last workout. Added ${add} rest ${add === 1 ? "day" : "days"} to ease you back in`);
+        return;
+      }
       const item = state.program[state.programPage];
       if (!item) return;
       state.workout = item.moves;
