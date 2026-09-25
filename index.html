@@ -77,6 +77,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       border: 2px solid var(--ink); border-radius: 8px;
     }
     .skip-link:focus { top: 1rem; }
+    /* v5.40: global polite live region for program-screen and settings announcements */
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
     /* ---- TV welcome gate + TV readability (v5.13) ---- */
     body.tv { font-size: 20px; }
     .tv-welcome { position: fixed; inset: 0; z-index: 200; background: #0a0a0a; color: #f5f5f5; overflow-y: auto; padding: 2.5rem 2rem 4rem; }
@@ -124,6 +126,17 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     body.tv .session-action-dock { grid-template-columns: minmax(0, 1fr); }
     body.tv .session-action-dock button { min-height: 76px; font-size: 1.35rem; }
     body.tv .voice-coach-bar, body.tv .session-tools { font-size: 1.2rem; }
+    /* v5.40: on TV the lean-back home is the whole experience — the phone hero,
+    bottom nav, footer, and inline home sections stay out of the way. Fullscreen
+    app sections (opened from the TV drawer) still render. */
+    body.tv > .hero, body.tv > .bottom-nav, body.tv > footer { display: none !important; }
+    body.tv main > section { display: none; }
+    body.tv.app-screen-view main > section.active-app-screen { display: block; }
+    /* v5.40: program-screen extras — check-in, missed-day repair, options */
+    .program-extras { margin: 0 0 1rem; padding: 1rem; background: #141414; border: 2px solid var(--yellow); border-radius: 12px; }
+    .program-extras p { margin: .2rem 0 .4rem; }
+    .program-extras-actions { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: .6rem; }
+    .program-extras-status { margin-top: .6rem; }
 
     .hero {
       background:
@@ -1120,6 +1133,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 </head>
 <body>
   <a class="skip-link" href="#builder" hidden>Skip to workout builder</a>
+  <div class="sr-only" id="global-live" role="status" aria-live="polite"></div>
   <div id="update-banner" hidden role="status" aria-live="polite" style="background:#c9a227;color:#111;padding:12px 16px;text-align:center;font-weight:bold;">
     <span id="update-banner-text"></span>
     <div style="margin-top:8px;">
@@ -2242,6 +2256,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             </div>
             <button class="voice-coach-toggle" type="button" id="health-connect-toggle" aria-pressed="false" aria-describedby="health-connect-help">Connect</button>
           </div>
+          <div class="voice-coach-bar">
+            <div class="voice-coach-copy">
+              <strong>Form coaching cues</strong>
+              <span id="form-cues-help">Spoken form guidance before and during exercises.</span>
+            </div>
+            <button class="voice-coach-toggle" type="button" id="form-cues-toggle" aria-pressed="true" aria-describedby="form-cues-help">On</button>
+          </div>
           <div>
             <p class="settings-label" id="profile-rest-label">Default rest between sets</p>
             <div class="rest-options" role="group" aria-labelledby="profile-rest-label">
@@ -2849,7 +2870,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       quickWorkout: [], quickWorkoutTitle: "", quickWorkoutFocus: "full", quickWorkoutDuration: 15,
       quickSession: false, planWorkoutBackup: null, activeWorkoutLabel: "",
       groceryChecks: {},
-      sessionPain: new Set(), painWorkoutBackup: null, pendingPainStart: false
+      sessionPain: new Set(), painWorkoutBackup: null, pendingPainStart: false,
+      // v5.40 additions
+      explicitBuilderRequested: false,
+      formCuesEnabled: true,
+      lastSorenessCheck: "", sorenessLevel: "",
+      missedDayDismissed: ""
     };
 
     // ---- Lynxos Gym persistence: keep app data across restarts ----
@@ -2914,8 +2940,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.39";
-    const LYNXOS_APP_VERSION_CODE = 55; // BUMP every release or the update banner never fires
+    const LYNXOS_APP_VERSION = "5.40";
+    const LYNXOS_APP_VERSION_CODE = 56; // BUMP every release or the update banner never fires
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
       const help = document.getElementById("health-connect-help");
@@ -3093,7 +3119,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         quickWorkoutFocus: state.quickWorkoutFocus, quickWorkoutDuration: state.quickWorkoutDuration,
         quickSession: state.quickSession === true,
         planWorkoutBackup: state.planWorkoutBackup,
-        groceryChecks: state.groceryChecks
+        groceryChecks: state.groceryChecks,
+        // v5.40 additions
+        formCuesEnabled: state.formCuesEnabled !== false,
+        lastSorenessCheck: state.lastSorenessCheck || "",
+        sorenessLevel: state.sorenessLevel || "",
+        missedDayDismissed: state.missedDayDismissed || ""
       };
     }
 
@@ -3134,10 +3165,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       let data;
       if (typeof raw === "object") data = raw;
       else { try { data = JSON.parse(raw); } catch (error) { return false; } }
-      if (!data || data.v !== 1 || !data.profile) return false;
+      if (!data || data.v !== 1) return false;
+      // v5.40: a missing fitness profile no longer rejects an otherwise valid
+      // snapshot — program, progress and history restore on their own.
+      const hasProgramData = (Array.isArray(data.program) && data.program.length > 0) || (Array.isArray(data.programs) && data.programs.length > 0);
+      if (!data.profile && !hasProgramData) return false;
       localSavedAt = Number(data.savedAt) || 0;
       try {
-        state.profile = data.profile;
+        state.profile = data.profile || null;
         state.level = data.level || state.level;
         state.duration = data.duration || state.duration;
         state.equipment = new Set(data.equipment || []);
@@ -3181,6 +3216,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         state.quickSession = false;
         state.planWorkoutBackup = null;
         state.groceryChecks = data.groceryChecks || {};
+        // v5.40 additions
+        state.formCuesEnabled = data.formCuesEnabled !== false;
+        state.lastSorenessCheck = data.lastSorenessCheck || "";
+        state.sorenessLevel = data.sorenessLevel || "";
+        state.missedDayDismissed = data.missedDayDismissed || "";
         lastPersistSnapshot = JSON.stringify(persistableState());
       } catch (error) { return false; }
       return true;
@@ -3316,6 +3356,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function openAppSection(sectionId, returnContext = null) {
       const section = document.getElementById(sectionId);
       if (!section || !appSectionTitles[sectionId]) return;
+      // v5.40: the builder section opens only on explicit request from the
+      // program screen — never from navigation, links, or scroll.
+      if (sectionId === "builder" && state.explicitBuilderRequested !== true) return;
       if (sectionId === "nutrition") { renderProteinTarget(); renderNutritionPlans(); }
       if (!activeAppSection) {
         appSectionReturn = returnContext || { type: "page", scrollY: window.scrollY };
@@ -3340,6 +3383,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // v5.28: sync AFTER clearing activeAppSection. It used to run first, while
       // activeAppSection was still "builder", which left the builder stuck
       // visible on the home page.
+      // v5.40: leaving the builder revokes the explicit request, so the section
+      // hides again and can never linger on the home page.
+      if (state.explicitBuilderRequested) state.explicitBuilderRequested = false;
       syncBuilderVisibility();
       if (!restore) return;
       if (returnContext?.type === "program") {
@@ -3440,6 +3486,30 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       state.programs.forEach(migrateRecordPlan);
     }
 
+    // v5.40: reopen on the earliest unfinished day — a plan that was browsed ahead
+    // never resumes past training that has not been done yet.
+    function normalizeProgramProgress() {
+      if (!Array.isArray(state.program) || state.program.length === 0) return;
+      let firstUnfinished = -1;
+      for (let i = 0; i < state.program.length; i++) {
+        if (!state.completedProgramPages.has(i)) { firstUnfinished = i; break; }
+      }
+      if (firstUnfinished === -1) return; // every day finished
+      if (state.programPage !== firstUnfinished) {
+        state.programPage = firstUnfinished;
+        const current = state.program[state.programPage];
+        state.workout = (current && current.moves) || [];
+        state.rounds = (current && current.rounds) || 2;
+      }
+    }
+
+    // v5.40: a program can always be built — if every equipment chip was cleared,
+    // fall back to the starter set instead of leaving the app program-less.
+    function ensureStarterEquipment() {
+      if (state.equipment.size) return;
+      ["Kettlebell", "Dumbbells", "Ab roller", "Bands"].forEach(name => state.equipment.add(name));
+    }
+
     function activeProgramRecord() {
       return state.programs.find(program => program.id === state.activeProgramId) || null;
     }
@@ -3510,17 +3580,23 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // v5.25: the "Build a program that fits" builder screen kept popping up for
     // Justin. Once a program exists the builder stays hidden; rebuilding still
     // works from the program dialog's own navigation.
+    // v5.40: the builder section never appears on its own — not on launch, not
+    // after an update, not on the home page. It opens only when explicitly
+    // requested from the program screen's "Build a new program" button.
     function syncBuilderVisibility() {
-      const hasProgram = hasSavedProgram();
+      const allowBuilder = state.explicitBuilderRequested === true;
       const builder = document.getElementById("builder");
-      if (builder) builder.hidden = hasProgram && activeAppSection !== "builder";
+      if (builder) {
+        builder.hidden = !allowBuilder;
+        builder.setAttribute("aria-hidden", allowBuilder ? "false" : "true");
+      }
       const heroBuild = document.getElementById("hero-build-link");
       if (heroBuild) {
-        heroBuild.textContent = hasProgram ? "Open my program" : "Build my workout";
-        heroBuild.setAttribute("aria-label", hasProgram ? "Open my workout program" : "Build my workout");
+        heroBuild.textContent = "Open my program";
+        heroBuild.setAttribute("aria-label", "Open my workout program");
       }
       const skipBuilder = document.querySelector('.skip-link[href="#builder"]');
-      if (skipBuilder) skipBuilder.hidden = hasProgram;
+      if (skipBuilder) skipBuilder.hidden = true;
     }
     function renderCurrentPlanCard() {
       const card = document.getElementById("current-plan-card");
@@ -3651,15 +3727,27 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
 
     function completeCurrentWorkout() {
-      state.completedWorkouts += 1;
+      // v5.40: rest-day aware streaks. Training days bump completedWorkouts and grow
+      // the streak when they directly follow the previously completed day; rest days
+      // only record their position, so the streak survives them instead of resetting.
+      // Re-completing an already-counted day never double-counts.
       if (state.quickSession) {
+        state.completedWorkouts += 1;
         awardAchievements();
         return;
       }
-      if (state.lastCompletedPage === null || state.programPage === state.lastCompletedPage + 1) state.workoutStreak += 1;
-      else state.workoutStreak = 1;
-      state.lastCompletedPage = state.programPage;
-      state.completedProgramPages.add(state.programPage);
+      const idx = state.programPage;
+      const item = state.program[idx];
+      const isRest = Boolean(item && item.isRestDay);
+      if (!state.completedProgramPages.has(idx)) {
+        state.completedProgramPages.add(idx);
+        if (!isRest) {
+          state.completedWorkouts += 1;
+          if (state.lastCompletedPage === null || state.lastCompletedPage === idx || state.lastCompletedPage === idx - 1) state.workoutStreak += 1;
+          else state.workoutStreak = 1;
+        }
+        state.lastCompletedPage = idx;
+      }
       if (hardWorkoutCount() > 0 && completedHardWorkoutCount() >= hardWorkoutCount()) state.deloadSuggested = true;
       saveActiveProgramRecord();
       syncProgramManager();
@@ -5051,6 +5139,129 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       announceSession(`${previous.name} swapped for ${alternative.name}. ${alternative.cue}`);
     }
 
+    // v5.40: program-screen extras — soreness check-in, missed-day repair,
+    // no-equipment mode, and the explicit builder entry point.
+    // Single polite announcer for program-screen and settings changes.
+    function announce(message) {
+      const live = document.getElementById("global-live");
+      if (!live) return;
+      live.textContent = "";
+      requestAnimationFrame(() => { live.textContent = message; });
+    }
+    function todayKey(date = new Date()) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    }
+    function daysSinceLastTraining() {
+      const last = (state.workoutHistory || []).find(entry => entry && !entry.quick && Number(entry.date));
+      if (!last) return 0;
+      return Math.floor((Date.now() - Number(last.date)) / 86400000);
+    }
+    function shiftPlanForward(days, label) {
+      const idx = state.programPage;
+      const current = state.program[idx] || { week: 1, day: 1 };
+      const restDays = [];
+      for (let n = 0; n < days; n++) restDays.push(makeRestDay(current.week, current.day));
+      state.program.splice(idx, 0, ...restDays);
+      state.completedProgramPages = new Set([...state.completedProgramPages].map(i => (i >= idx ? i + days : i)));
+      if (state.lastCompletedPage !== null && state.lastCompletedPage >= idx) state.lastCompletedPage += days;
+      saveActiveProgramRecord();
+      saveAppState();
+      renderProgramPage();
+      announce(`${label}. Your streak is kept.`);
+    }
+    function buildProgramExtras(isRestDay) {
+      const parts = [];
+      const today = todayKey();
+      if (!isRestDay && state.lastSorenessCheck !== today) {
+        parts.push(`<div class="program-extras" role="group" aria-label="Daily body check-in">
+          <p><strong>Body check-in:</strong> how are you feeling today?</p>
+          <div class="program-extras-actions">
+            <button class="secondary" type="button" data-soreness="fresh">Fresh</button>
+            <button class="secondary" type="button" data-soreness="sore">A bit sore</button>
+            <button class="secondary" type="button" data-soreness="very">Very sore</button>
+          </div>
+        </div>`);
+      }
+      const missed = daysSinceLastTraining();
+      if (missed >= 2 && state.missedDayDismissed !== today) {
+        parts.push(`<div class="program-extras" role="group" aria-label="Missed day repair">
+          <p><strong>It has been ${missed} days</strong> since your last full workout. Ease back in?</p>
+          <div class="program-extras-actions">
+            <button class="secondary" type="button" data-missed-repair>Catch me up — add rest days</button>
+            <button class="secondary" type="button" data-missed-keep>Keep my place</button>
+          </div>
+        </div>`);
+      }
+      parts.push(`<div class="program-extras" role="group" aria-label="Today's options">
+        <div class="program-extras-actions">
+          ${isRestDay ? "" : `<button class="secondary" type="button" data-no-equipment>No equipment today</button>`}
+          <button class="secondary" type="button" data-rebuild-program>Build a new program</button>
+        </div>
+      </div>`);
+      return parts.join("");
+    }
+    function wireProgramExtras() {
+      const page = document.getElementById("program-page");
+      page.querySelectorAll("[data-soreness]").forEach(button => button.addEventListener("click", () => {
+        const level = button.dataset.soreness;
+        state.lastSorenessCheck = todayKey();
+        state.sorenessLevel = level;
+        saveAppState();
+        const group = button.closest(".program-extras");
+        if (level === "very") {
+          if (group) group.innerHTML = `<p><strong>Very sore — recorded.</strong> Rest is smart training.</p><div class="program-extras-actions"><button class="secondary" type="button" data-rest-today>Make today a rest day</button></div>`;
+          page.querySelector("[data-rest-today]")?.addEventListener("click", () => shiftPlanForward(1, "Today is now a rest day. Your workout moved to tomorrow"));
+          announce("Recorded: very sore. You can make today a rest day.");
+        } else if (level === "sore") {
+          if (group) group.innerHTML = `<p><strong>A bit sore — recorded.</strong> Today's session will use one fewer round.</p>`;
+          announce("Recorded: a bit sore. Today's session will use one fewer round.");
+        } else {
+          if (group) group.innerHTML = `<p><strong>Fresh — recorded.</strong> Have a strong session.</p>`;
+          announce("Recorded: fresh. Have a strong session.");
+        }
+      }));
+      page.querySelector("[data-missed-repair]")?.addEventListener("click", () => {
+        const missed = Math.min(7, daysSinceLastTraining());
+        shiftPlanForward(missed, `Added ${missed} rest ${missed === 1 ? "day" : "days"} to ease you back in`);
+      });
+      page.querySelector("[data-missed-keep]")?.addEventListener("click", () => {
+        state.missedDayDismissed = todayKey();
+        saveAppState();
+        renderProgramPage(false);
+        announce("Keeping your place. No changes made.");
+      });
+      page.querySelector("[data-no-equipment]")?.addEventListener("click", startNoEquipmentSession);
+      page.querySelector("[data-rebuild-program]")?.addEventListener("click", () => {
+        state.explicitBuilderRequested = true;
+        programDialog.close();
+        openAppSection("builder", { type: "program" });
+        requestAnimationFrame(() => document.getElementById("builder-title")?.focus());
+        announce("Program builder open. Build your new program, then open your program to see it.");
+      });
+    }
+    function findBodyweightAlternative(exercise, usedIds) {
+      const pattern = movementPattern(exercise);
+      const primaryFocus = exercise.focus.includes("upper") ? "upper" : exercise.focus.includes("lower") ? "lower" : exercise.focus.includes("core") ? "core" : "full";
+      const candidates = exercises.filter(item =>
+        item.id !== exercise.id && !usedIds.has(item.id) &&
+        item.equipment === "No equipment" &&
+        (movementPattern(item) === pattern || item.focus.includes(primaryFocus))
+      );
+      return candidates[0] || exercises.find(item => item.id !== exercise.id && !usedIds.has(item.id) && item.equipment === "No equipment") || null;
+    }
+    function startNoEquipmentSession() {
+      const item = state.program[state.programPage];
+      if (!item || item.isRestDay || !Array.isArray(item.moves) || !item.moves.length) return;
+      const used = new Set();
+      const moves = [];
+      for (const exercise of item.moves) {
+        const chosen = exercise.equipment === "No equipment" ? exercise : (findBodyweightAlternative(exercise, used) || exercise);
+        used.add(chosen.id);
+        moves.push(chosen);
+      }
+      state.quickWorkoutTitle = "No-equipment session";
+      startQuickWorkout({ moves, rounds: Math.max(2, (item.rounds || 3) - 1) });
+    }
     function renderProgramPage(announce = true) {
       const item = state.program[state.programPage];
       if (!item) return;
@@ -5090,7 +5301,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="program-moves" aria-label="Exercises for ${item.isDeload ? `deload workout ${deloadNumber}` : `week ${item.week}, day ${item.day}`}">
           ${item.moves.map((ex, index) => `<div class="program-move"><strong aria-hidden="true">${index + 1}</strong><div><strong>${ex.name}</strong><span>${programDose(ex, item.rounds)}${equipmentPrescription(ex) ? ` · ${equipmentPrescription(ex)}` : ""}</span></div><div class="program-move-actions"><button type="button" data-detail="${ex.id}" aria-label="Instructions for ${ex.name}">How to</button><button class="swap-btn" type="button" data-swap-index="${index}" aria-label="Swap ${ex.name} for an alternative">Swap</button></div></div>`).join("")}
         </div>`;
-      document.getElementById("program-page").innerHTML = isRestDay ? restDayBody : trainingDayBody;
+      document.getElementById("program-page").innerHTML = buildProgramExtras(isRestDay) + (isRestDay ? restDayBody : trainingDayBody);
+      wireProgramExtras();
       const startWorkoutButton = document.getElementById("start-workout");
       startWorkoutButton.textContent = state.savedSession ? "Start this workout from the beginning" : (item.isDeload ? "Start easier deload workout" : "Start workout");
       document.getElementById("resume-saved-workout")?.addEventListener("click", resumeSavedSession);
@@ -5672,8 +5884,21 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
     }
 
-    function updateVoiceCommandUI(message = "") {
-      const button = document.getElementById("voice-command-toggle");
+    // v5.40: keep the screen awake while a guided workout is active (Android/TV).
+    // The native app shell also holds the screen on; this covers the web build.
+    let workoutWakeLock = null;
+    async function requestWorkoutWakeLock() {
+      try {
+        if ("wakeLock" in navigator && navigator.wakeLock && typeof navigator.wakeLock.request === "function") {
+          workoutWakeLock = await navigator.wakeLock.request("screen");
+        }
+      } catch (error) { /* unsupported or denied — the native flag still applies */ }
+    }
+    function releaseWorkoutWakeLock() {
+      try { if (workoutWakeLock && typeof workoutWakeLock.release === "function") workoutWakeLock.release(); } catch (error) {}
+      workoutWakeLock = null;
+    }
+    function updateVoiceCommandUI(message = "") {      const button = document.getElementById("voice-command-toggle");
       const status = document.getElementById("voice-command-status");
       if (!SpeechRecognitionAPI) {
         button.disabled = true;
@@ -5820,6 +6045,26 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (!voiceCoachSupported()) return;
       state.voiceCoachEnabled = !state.voiceCoachEnabled;
       syncVoiceCoachMode(true);
+    }
+
+    // v5.40: spoken form-coaching cues toggle (Profile).
+    function syncFormCuesToggle(announceChange = false) {
+      const toggle = document.getElementById("form-cues-toggle");
+      if (!toggle) return;
+      toggle.setAttribute("aria-pressed", String(state.formCuesEnabled));
+      toggle.setAttribute("aria-label", state.formCuesEnabled
+        ? "Form coaching cues are on. Double tap to turn them off"
+        : "Form coaching cues are off. Double tap to turn them on");
+      toggle.textContent = state.formCuesEnabled ? "On" : "Off";
+      document.getElementById("form-cues-help").textContent = state.formCuesEnabled
+        ? "Spoken form guidance before and during exercises."
+        : "Form guidance is silent. Exercise names and sets are still announced.";
+      if (announceChange) announce(state.formCuesEnabled ? "Form coaching cues on." : "Form coaching cues off.");
+    }
+    function toggleFormCues() {
+      state.formCuesEnabled = !state.formCuesEnabled;
+      saveAppState();
+      syncFormCuesToggle(true);
     }
 
     function syncRestControls() {
@@ -6128,6 +6373,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
     function endWorkoutWithoutSaving() {
       const wasQuickSession = state.quickSession;
+      releaseWorkoutWakeLock();
       state.savedSession = null;
       if (!wasQuickSession) saveActiveProgramRecord();
       state.sessionPaused = false;
@@ -6248,9 +6494,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
       const exercise = item.exercise;
       const guidance = instructionGuidance(exercise);
+      // v5.40: form cues in the set intro honor the Profile "form cues" toggle.
+      const cueFull = state.formCuesEnabled ? ` ${exercise.cue} ${guidance.breathing} ${guidance.tempo}` : "";
+      const cueShort = state.formCuesEnabled ? ` ${exercise.cue}` : "";
       const setIntro = state.playerSet === 1
-        ? `Start exercise. Exercise ${state.playerIndex + 1} of ${state.workout.length}. ${exercise.name}. ${state.playerTotalSets} sets of ${spokenDose(exercise.dose)}. Set 1 begins now. ${exercise.cue} ${guidance.breathing} ${guidance.tempo}`
-        : `Start exercise. ${exercise.name}. Set ${state.playerSet} of ${state.playerTotalSets} begins now. Complete ${spokenDose(exercise.dose)}. ${exercise.cue}`;
+        ? `Start exercise. Exercise ${state.playerIndex + 1} of ${state.workout.length}. ${exercise.name}. ${state.playerTotalSets} sets of ${spokenDose(exercise.dose)}. Set 1 begins now.${cueFull}`
+        : `Start exercise. ${exercise.name}. Set ${state.playerSet} of ${state.playerTotalSets} begins now. Complete ${spokenDose(exercise.dose)}.${cueShort}`;
       syncSessionManagement();
       if (announce) {
         playStartSignal();
@@ -6563,8 +6812,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       state.sessionQueueIndex = 0;
       state.playerIndex = 0;
       state.playerSet = 1;
-      state.playerTotalSets = state.rounds;
+      // v5.40: a "bit sore" check-in trims one round off today's session only.
+      const soreTrim = (!state.quickSession && state.sorenessLevel === "sore" && state.lastSorenessCheck === todayKey()) ? 1 : 0;
+      state.playerTotalSets = Math.max(1, state.rounds - soreTrim);
       state.workoutStartedAt = Date.now();
+      requestWorkoutWakeLock();
       state.lastWorkoutSummary = "";
       state.savedSession = null;
       state.sessionPaused = false;
@@ -6604,6 +6856,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }, `Set ${state.playerSet} complete. Nice work. Rest for ${formatTimerSpeech(state.restDuration)}. ${exercise.name}, set ${nextSet} of ${state.playerTotalSets}, is next.`);
     }
 
+    // v5.40: spoken form coaching. During the rest before each exercise the coach
+    // speaks the upcoming exercise's form cue, so setup happens with correct
+    // form before the first set — no need to see the animated robot.
+    function formCueSpeech(exercise) {
+      if (!state.formCuesEnabled || !exercise) return "";
+      const guidance = instructionGuidance(exercise);
+      return ` Form check before you start: ${exercise.cue} ${guidance.breathing}`;
+    }
     function startRest() {
       state.sessionQueueIndex += 1;
       state.playerSet = 1;
@@ -6614,7 +6874,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       document.getElementById("session-phase").textContent = "Rest between exercises";
       const nextExercise = nextItem.exercise;
       document.getElementById("timer-label").textContent = `Rest for ${formatTimerSpeech(state.restDuration)}. ${nextExercise.name}, set 1 of ${state.playerTotalSets}, is next.`;
-      runCountdown(state.restDuration, "rest", beginExercise, `Exercise complete. Strong work. Rest for ${formatTimerSpeech(state.restDuration)}. Next exercise: ${nextExercise.name}. ${state.playerTotalSets} sets of ${spokenDose(nextExercise.dose)}.`);
+      runCountdown(state.restDuration, "rest", beginExercise, `Exercise complete. Strong work. Rest for ${formatTimerSpeech(state.restDuration)}. Next exercise: ${nextExercise.name}. ${state.playerTotalSets} sets of ${spokenDose(nextExercise.dose)}.${formCueSpeech(nextExercise)}`);
     }
 
     function renderWorkoutFeedback() {
@@ -6845,6 +7105,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
     function finishWorkout() {
       stopTimer();
+      releaseWorkoutWakeLock();
       const completedQuickSession = state.quickSession;
       completeCurrentWorkout();
       const finishedTrainingBlock = !completedQuickSession && state.deloadSuggested && !state.program[state.programPage]?.isDeload;
@@ -7030,6 +7291,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     document.getElementById("close-pain-check").addEventListener("click", cancelPainCheck);
     document.getElementById("voice-coach-toggle").addEventListener("click", toggleVoiceCoach);
     document.getElementById("profile-voice-toggle").addEventListener("click", toggleVoiceCoach);
+    document.getElementById("form-cues-toggle").addEventListener("click", toggleFormCues);
     document.getElementById("health-connect-toggle").addEventListener("click", toggleHealthConnect);
     window.addEventListener("lynxos-health-result", () => {
       syncHealthConnectRow();
@@ -7125,6 +7387,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // v5.39: no Previous/Next day buttons — the program shows only the current
     // day. Finishing a workout (or tapping through a rest day) reveals the next day.
     document.getElementById("rest-continue").addEventListener("click", () => {
+      // v5.40: tapping through a rest day records it as completed, so streaks and
+      // progress stay continuous across rest days instead of resetting.
+      completeCurrentWorkout();
       if (state.programPage < state.program.length - 1) {
         state.programPage += 1;
         state.workout = state.program[state.programPage]?.moves || [];
@@ -7385,11 +7650,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         initializePrograms();
       }
       syncProgramManager();
-      // v5.27: no longer pops the program dialog open on every launch. The
-      // dialog used to open by itself at startup (and after every cloud
-      // restore), covering the home screen and trapping the screen reader
-      // inside it, so the new Check for updates button couldn't be reached.
-      // The program opens only when Justin asks for it now.
+      // v5.40: at Justin's explicit request the app now lands on the program
+      // screen at launch (see the init block below). Reverses the v5.27 decision
+      // to never auto-open: the program dialog has a labeled close button and a
+      // back-button handler, and Check for updates is reachable from its Profile
+      // destination, so nothing is trapped.
     }
 
     async function pullCloudSnapshot() {
@@ -7403,7 +7668,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const cloudTime = Date.parse(res.data.updated_at) || 0;
         const effectiveLocalTime = localStateHasUserData() ? localSavedAt : 0;
         if (cloudTime > effectiveLocalTime && restoreAppState(res.data.data)) {
+          migrateRestDaysIntoState();
+          normalizeProgramProgress();
           renderRestoredSession();
+          // v5.40: a late cloud restore replaces the starter program the launch
+          // built — refresh the open program screen so it shows the real plan.
+          if (!isTVDevice() && programDialog.open) renderProgramPage(false);
           const tour = document.getElementById("tour-dialog");
           if (tour && tour.open) { try { tour.close(); } catch (closeError) {} }
           return true;
@@ -8027,8 +8297,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     prepareAccessibleOptions();
     const restoredSession = restoreAppState();
     migrateRestDaysIntoState();
+    normalizeProgramProgress();
     syncCalculatorUnits(false);
     syncVoiceCoachMode(false);
+    syncFormCuesToggle(false);
     syncSessionManagement();
     initPlayerStickyBar();
     syncRestControls();
@@ -8039,9 +8311,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (restoredSession) {
       renderRestoredSession();
     } else {
+      ensureStarterEquipment();
       buildWorkout();
     }
     initializePrograms();
+    // v5.40: the app lands on the program screen at launch — the home hero is
+    // never the first thing on screen, and never the first thing TalkBack reads.
+    // TV keeps its lean-back home. The dialog has a labeled close button and the
+    // native back button returns home, so nothing is trapped.
+    if (!isTVDevice()) openProgram();
     initGoogleCloud(restoredSession);
     initTvWelcome();
     initTvSync();
@@ -8056,6 +8334,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         checkForGymUpdate();
         // v5.28: re-hide the builder if a stuck visible state survived.
         syncBuilderVisibility();
+        // v5.40: re-hold the wake lock when returning mid-workout.
+        if (state.workoutStartedAt && state.playerPhase !== "idle" && state.playerPhase !== "complete") requestWorkoutWakeLock();
+      } else {
+        releaseWorkoutWakeLock();
       }
     });
     // v5.28: guarantee a clean home view at boot — no stuck fullscreen section,
