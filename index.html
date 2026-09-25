@@ -2940,8 +2940,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.40";
-    const LYNXOS_APP_VERSION_CODE = 56; // BUMP every release or the update banner never fires
+    const LYNXOS_APP_VERSION = "5.41";
+    const LYNXOS_APP_VERSION_CODE = 57; // BUMP every release or the update banner never fires
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
       const help = document.getElementById("health-connect-help");
@@ -7673,7 +7673,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           renderRestoredSession();
           // v5.40: a late cloud restore replaces the starter program the launch
           // built — refresh the open program screen so it shows the real plan.
-          if (!isTVDevice() && programDialog.open) renderProgramPage(false);
+          if (!isTvDevice() && programDialog.open) renderProgramPage(false);
           const tour = document.getElementById("tour-dialog");
           if (tour && tour.open) { try { tour.close(); } catch (closeError) {} }
           return true;
@@ -8319,7 +8319,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // never the first thing on screen, and never the first thing TalkBack reads.
     // TV keeps its lean-back home. The dialog has a labeled close button and the
     // native back button returns home, so nothing is trapped.
-    if (!isTVDevice()) openProgram();
+    if (!isTvDevice()) openProgram();
     initGoogleCloud(restoredSession);
     initTvWelcome();
     initTvSync();
