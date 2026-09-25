@@ -87,6 +87,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     .tv-welcome-close { position: absolute; top: 0; right: 0; font-size: 1.8rem; min-width: 60px; min-height: 60px; }
     .tv-welcome-close[hidden] { display: none; }
     #tv-welcome-google-slot section, #tv-welcome-qr-slot section { background: #161616; border: 2px solid var(--yellow); border-radius: 14px; padding: 1.5rem; margin-top: 1.5rem; }
+    /* v5.35 TV side panel: D-pad left opens it, right/Escape closes it. */
+    .tv-drawer { position: fixed; top: 0; left: 0; bottom: 0; width: min(430px, 82vw); z-index: 300; background: #0d0d0d; border-right: 3px solid var(--yellow); transform: translateX(-106%); transition: transform .25s ease; }
+    .tv-drawer.open { transform: none; }
+    .tv-drawer[hidden] { display: none; }
+    .tv-drawer-inner { padding: 2rem 1.4rem; display: grid; gap: .8rem; overflow-y: auto; max-height: 100%; }
+    .tv-drawer-inner h2 { color: var(--yellow); margin: 0 0 .4rem; font-size: 1.6rem; }
+    .tv-drawer-inner button { min-height: 64px; font-size: 1.2rem; background: #1a1a1a; color: #f5f5f5; border: 2px solid #4a4a4a; border-radius: 10px; text-align: left; padding: .8rem 1rem; }
+    .tv-drawer-inner button:focus { border-color: var(--yellow); outline: 3px solid var(--yellow); }
     #tv-welcome-google-slot h3, #tv-welcome-qr-slot h3 { color: var(--yellow); margin-top: 0; font-size: 1.6rem; }
     #tv-welcome-google-slot p, #tv-welcome-qr-slot p { font-size: 1.15rem; }
     #tv-welcome-qr-slot #tv-qr svg { width: 240px; height: 240px; }
@@ -1063,6 +1071,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <button type="button" id="update-now" style="background:#111;color:#c9a227;border:2px solid #111;border-radius:8px;padding:12px 24px;font-weight:bold;font-size:16px;">Update</button>
     </div>
   </div>
+
+  <nav id="tv-drawer" class="tv-drawer" aria-label="TV menu" hidden>
+    <div class="tv-drawer-inner">
+      <h2>Menu</h2>
+      <button type="button" data-tv-nav="program">My Program</button>
+      <button type="button" data-tv-nav="builder">Workout Plan</button>
+      <button type="button" data-tv-nav="library">Exercises</button>
+      <button type="button" data-tv-nav="nutrition">Nutrition Basics</button>
+      <button type="button" data-tv-nav="learn">Learn the Basics</button>
+      <button type="button" data-tv-nav="achievements">Progress &amp; Achievements</button>
+      <button type="button" id="tv-drawer-close">Close menu</button>
+    </div>
+  </nav>
 
   <header class="hero">
     <div class="hero-inner">
@@ -2165,6 +2186,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="profile-actions">
         <button class="primary" type="button" id="settings-check-updates">Check for updates</button>
       </div>
+      <p class="profile-save-status" id="settings-update-status" role="status" aria-live="polite"></p>
       <section aria-labelledby="app-settings-title">
         <h3 id="app-settings-title">Workout settings</h3>
         <div class="settings-group">
@@ -2776,7 +2798,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       completedWorkouts: 0, workoutStreak: 0, lastCompletedPage: null,
       completedProgramPages: new Set(), earnedAchievements: new Set(),
       workoutHistory: [],
-      programs: [], activeProgramId: "", programNameMode: "create", deloadSuggested: false,
+      programs: [], activeProgramId: "", programNameMode: "create", deloadSuggested: false, programCycle: 1,
       favorites: new Set(), libraryFilter: "All",
       tourIndex: 0, tourReturn: "onboarding", safetyActive: false, safetyWasAutoPaused: false,
       quickWorkout: [], quickWorkoutTitle: "", quickWorkoutFocus: "full", quickWorkoutDuration: 15,
@@ -2847,8 +2869,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.34";
-    const LYNXOS_APP_VERSION_CODE = 50; // BUMP every release or the update banner never fires
+    const LYNXOS_APP_VERSION = "5.35";
+    const LYNXOS_APP_VERSION_CODE = 51; // BUMP every release or the update banner never fires
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
       const help = document.getElementById("health-connect-help");
@@ -2994,6 +3016,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         lastCompletedPage: record.lastCompletedPage ?? null,
         workoutStreak: record.workoutStreak || 0, savedSession: null,
         deloadSuggested: Boolean(record.deloadSuggested),
+        programCycle: Number(record.programCycle) || 1,
         focus: record.focus, duration: record.duration,
         equipment: [...(record.equipment || [])], level: record.level
       };
@@ -3051,6 +3074,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         lastCompletedPage: record.lastCompletedPage ?? null,
         workoutStreak: record.workoutStreak || 0, savedSession: null,
         deloadSuggested: Boolean(record.deloadSuggested),
+        programCycle: Number(record.programCycle) || 1,
         focus: record.focus, duration: record.duration,
         equipment: new Set(record.equipment || []), level: record.level
       };
@@ -3325,6 +3349,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       record.workoutStreak = state.workoutStreak;
       record.savedSession = state.savedSession;
       record.deloadSuggested = state.deloadSuggested;
+      record.programCycle = state.programCycle || 1;
       record.focus = document.getElementById("focus").value;
       record.duration = state.duration;
       record.equipment = new Set(state.equipment);
@@ -3342,6 +3367,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       state.workoutStreak = record.workoutStreak || 0;
       state.savedSession = record.savedSession || null;
       state.deloadSuggested = Boolean(record.deloadSuggested);
+      state.programCycle = Number(record.programCycle) || 1;
       state.duration = record.duration || state.duration;
       state.equipment = new Set(record.equipment || state.equipment);
       state.level = record.level || state.level;
@@ -3405,7 +3431,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       state.activeProgramId = id;
       state.programs.push({
         id, name: "My Program", plan: state.program, page: state.programPage, style: state.programStyle,
-        completedPages: new Set(), lastCompletedPage: null, workoutStreak: 0, savedSession: null, deloadSuggested: false,
+        completedPages: new Set(), lastCompletedPage: null, workoutStreak: 0, savedSession: null, deloadSuggested: false, programCycle: 1,
         focus: document.getElementById("focus").value, duration: state.duration, equipment: new Set(state.equipment), level: state.level
       });
       syncProgramManager();
@@ -3468,7 +3494,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const id = `program-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
       state.programs.push({
         id, name, plan: [], page: 0, style: "balanced", completedPages: new Set(), lastCompletedPage: null,
-        workoutStreak: 0, savedSession: null, deloadSuggested: false,
+        workoutStreak: 0, savedSession: null, deloadSuggested: false, programCycle: 1,
         focus: document.getElementById("focus").value, duration: state.duration, equipment: new Set(state.equipment), level: state.level
       });
       state.activeProgramId = id;
@@ -4637,7 +4663,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return priorities[focus];
     }
 
-    function pickExercises(focus, count, offset, gentle) {
+    // v5.35: shared pool so core lifts and accessories draw from the same
+    // trainer-prioritized list (compound movements first).
+    function exercisePool(focus, gentle) {
       const bodyweightOnly = state.equipment.size === 1 && state.equipment.has("No equipment");
       const equipmentMatches = ex => bodyweightOnly ? ex.equipment === "No equipment" : ex.equipment === "No equipment" || state.equipment.has(ex.equipment);
       let pool = exercises.filter(ex => equipmentMatches(ex) && ex.focus.includes(focus));
@@ -4648,6 +4676,27 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const ai = priorities.indexOf(a.id), bi = priorities.indexOf(b.id);
         return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
       });
+      return pool;
+    }
+
+    // v5.35: the plan that sticks — the top-priority compound lifts, identical
+    // every week. Progress comes from progression, not random variety.
+    function pickCoreLifts(focus, count, gentle) {
+      return exercisePool(focus, gentle).slice(0, Math.max(0, count));
+    }
+
+    // v5.35: progressive overload between cycles — same lifts, more work.
+    function progressDose(dose, cycle) {
+      if (!dose || cycle < 2) return dose;
+      const repBump = (cycle - 1) * 2;
+      const secBump = (cycle - 1) * 5;
+      return dose
+        .replace(/(\d+)(\s*reps?)/i, (m, n, u) => Math.min(20, parseInt(n, 10) + repBump) + u)
+        .replace(/(\d+)(\s*seconds?)/i, (m, n, u) => (parseInt(n, 10) + secBump) + u);
+    }
+
+    function pickExercises(focus, count, offset, gentle) {
+      const pool = exercisePool(focus, gentle);
       if (!pool.length) return [];
       const rotated = pool.slice(offset % pool.length).concat(pool.slice(0, offset % pool.length));
       const chosen = [], gear = new Set();
@@ -4656,11 +4705,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return chosen;
     }
 
-    function buildProgram(needsGentleStart) {
+    function buildProgram(needsGentleStart, opts = {}) {
       state.completedProgramPages = new Set();
       state.lastCompletedPage = null;
       state.workoutStreak = 0;
       state.deloadSuggested = false;
+      // v5.35: training cycles. A fresh program starts cycle 1; "start next
+      // cycle" keeps the same core lifts and adds reps (progressive overload).
+      const cycle = opts.nextCycle ? (Number(state.programCycle) || 1) + 1 : 1;
+      state.programCycle = cycle;
       const daysPerWeek = state.profile?.days || 2;
       const baseFocus = document.getElementById("focus").value;
       const goal = state.profile?.goal || "general";
@@ -4696,22 +4749,40 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         "Week target: add 1 set while keeping steady form.",
         "Week target: use a 3-second lowering phase; increase weight only if every rep stays controlled."
       ];
+      // v5.35: the plan that sticks — core compound lifts are chosen once per
+      // training day and repeat every week; only accessories rotate.
+      const trainerMethod = " Trainer method: your core lifts stay the same for all four weeks. You get stronger by repeating the big movements and adding reps or weight — not from random variety.";
+      const cycleNote = cycle > 1 ? ` Cycle ${cycle} progression: same trusted core lifts as your last cycle, now with ${(cycle - 1) * 2} extra reps on every set. When every set feels comfortable, move up to the next heavier weight.` : "";
+      const coreByDay = {};
+      for (let day = 1; day <= daysPerWeek; day += 1) {
+        let focus = focusCycle[(day - 1) % focusCycle.length];
+        if (baseFocus !== "full") focus = day % 2 === 1 ? baseFocus : "full";
+        coreByDay[day] = pickCoreLifts(focus, Math.min(2, moveCount), needsGentleStart);
+      }
       const program = [];
       for (let week = 1; week <= 4; week += 1) {
         for (let day = 1; day <= daysPerWeek; day += 1) {
           let focus = focusCycle[(day - 1) % focusCycle.length];
           if (baseFocus !== "full") focus = day % 2 === 1 ? baseFocus : "full";
           const variationOffset = (week - 1) * Math.max(1, moveCount - 1) + (day - 1) * 2;
-          const moves = pickExercises(focus, moveCount, variationOffset, needsGentleStart);
+          const core = coreByDay[day];
+          const accessories = pickExercises(focus, moveCount + core.length, variationOffset, needsGentleStart)
+            .filter(ex => !core.some(c => c.id === ex.id))
+            .slice(0, Math.max(0, moveCount - core.length));
+          let moves = [...core, ...accessories];
+          if (cycle > 1) moves = moves.map(ex => ({ ...ex, dose: progressDose(ex.dose, cycle) }));
           const baseRounds = state.programStyle === "gentle" || needsGentleStart ? 2 : state.programStyle === "short" ? 2 : state.duration === 35 ? Math.max(4, goalVolume.rounds) : goalVolume.rounds;
           const rounds = Math.min(5, baseRounds + (week >= 3 ? 1 : 0));
-          program.push({ week, day, focus, moves, rounds, note: weekNotes[week - 1], progression: weekProgressions[week - 1], isDeload: false });
+          program.push({ week, day, focus, moves, rounds, note: weekNotes[week - 1] + (week === 1 ? trainerMethod : "") + cycleNote, progression: weekProgressions[week - 1], isDeload: false });
         }
       }
       for (let day = 1; day <= daysPerWeek; day += 1) {
         let focus = focusCycle[(day - 1) % focusCycle.length];
         if (baseFocus !== "full") focus = day % 2 === 1 ? baseFocus : "full";
-        const moves = pickExercises(focus, Math.min(3, moveCount), day - 1, true);
+        // v5.35: deload uses the same familiar core lifts, easy effort.
+        const core = coreByDay[day];
+        const extra = pickExercises(focus, Math.min(3, moveCount), day - 1, true).filter(ex => !core.some(c => c.id === ex.id));
+        const moves = [...core, ...extra].slice(0, Math.min(3, moveCount));
         program.push({
           week: 5, day, focus, moves, rounds: 2, isDeload: true,
           note: "Optional deload week: use familiar movements, easy effort, and extra recovery before beginning another four-week cycle.",
@@ -4725,6 +4796,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       saveActiveProgramRecord();
       syncProgramManager();
       renderAchievements();
+    }
+
+    // v5.35: progressive overload — a new 4-week cycle built from the last plan.
+    function startNextCycle() {
+      buildProgram(false, { nextCycle: true });
+      saveActiveProgramRecord();
+      state.programPage = 0;
+      renderProgramPage(false);
+      if (!programDialog.open) programDialog.showModal();
+      requestAnimationFrame(() => document.getElementById("start-workout")?.focus());
     }
 
     function buildWorkout(openView = false) {
@@ -4853,7 +4934,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <h3>${item.isDeload ? "Deload" : `Day ${item.day}`}: ${focusName}</h3>
         <p class="program-purpose">${item.note}</p>
         <p class="plan-note"><strong>${item.progression}</strong></p>
-        ${item.isDeload ? `<div class="program-feedback"><p>${state.deloadSuggested ? "Your four training weeks are complete. This easier week is ready." : "This optional easier week is planned for after the four training weeks."}</p><span>Keep the effort comfortable. You can stop early and begin a new cycle only after you feel recovered.</span></div>` : ""}
+        ${item.isDeload ? `<div class="program-feedback"><p>${state.deloadSuggested ? "Your four training weeks are complete. This easier week is ready." : "This optional easier week is planned for after the four training weeks."}</p><span>Keep the effort comfortable. You can stop early and begin a new cycle only after you feel recovered.</span>${state.deloadSuggested ? `<div style="margin-top:.9rem"><button class="primary" type="button" id="start-next-cycle">Start next 4-week cycle — level up</button></div>` : ""}</div>` : ""}
         <p class="plan-note"><strong>Guided session:</strong> begins with a 3-minute warm-up, includes ${state.restDuration}-second rests between sets, and ends with a guided stretch.</p>
         <div class="program-moves" aria-label="Exercises for ${item.isDeload ? `deload workout ${deloadNumber}` : `week ${item.week}, day ${item.day}`}">
           ${item.moves.map((ex, index) => `<div class="program-move"><strong aria-hidden="true">${index + 1}</strong><div><strong>${ex.name}</strong><span>${programDose(ex, item.rounds)}${equipmentPrescription(ex) ? ` · ${equipmentPrescription(ex)}` : ""}</span></div><div class="program-move-actions"><button type="button" data-detail="${ex.id}" aria-label="Instructions for ${ex.name}">How to</button><button class="swap-btn" type="button" data-swap-index="${index}" aria-label="Swap ${ex.name} for an alternative">Swap</button></div></div>`).join("")}
@@ -4872,6 +4953,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         showDetail(exerciseId, { type: "program", exerciseId });
       }));
       document.querySelectorAll("#program-page [data-swap-index]").forEach(button => button.addEventListener("click", () => swapProgramExercise(Number(button.dataset.swapIndex))));
+      document.getElementById("start-next-cycle")?.addEventListener("click", startNextCycle);
       document.getElementById("start-workout").addEventListener("click", () => {
         state.savedSession = null;
         programDialog.close();
@@ -6852,11 +6934,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     });
     document.getElementById("hero-check-updates")?.addEventListener("click", () => checkForGymUpdate(true));
     document.getElementById("builder-check-updates")?.addEventListener("click", () => checkForGymUpdate(true));
+    // v5.35: report the result inline in Settings — the old flow closed the
+    // dialog first and the answer ended up hidden behind the program screen.
     document.getElementById("settings-check-updates")?.addEventListener("click", () => {
-      returnFromProfile();
-      // v5.34: delay so the dialog fully closes before the live region
-      // updates — otherwise TalkBack misses the announcement.
-      setTimeout(() => checkForGymUpdate(true), 400);
+      checkForGymUpdate(true, document.getElementById("settings-update-status"));
     });
     document.getElementById("profile-tabbtn")?.addEventListener("click", () => selectProfileTab("profile"));
     document.getElementById("settings-tabbtn")?.addEventListener("click", () => selectProfileTab("settings"));
@@ -7183,7 +7264,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // v5.26: manual=true is the "Check for updates" button on the main screen.
     // It always reports back: the update banner when a newer release exists,
     // otherwise a quiet "you're on the latest version" notice.
-    function checkForGymUpdate(manual) {
+    function checkForGymUpdate(manual, statusEl) {
       const banner = document.getElementById("update-banner");
       if (!banner) return;
       const label = document.getElementById("update-banner-text");
@@ -7193,6 +7274,22 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         banner.style.display = "none";
       }
       function showNotice(text, buttonText, onButton) {
+        // v5.35: when a status element is given (Settings), report inline so
+        // the result can never end up hidden behind another dialog.
+        if (statusEl) {
+          statusEl.textContent = "";
+          statusEl.append(document.createTextNode(text));
+          if (buttonText && onButton && !/^(ok|dismiss|close)$/i.test(buttonText)) {
+            statusEl.append(document.createTextNode(" "));
+            const inline = document.createElement("button");
+            inline.type = "button";
+            inline.className = "primary";
+            inline.textContent = buttonText;
+            inline.addEventListener("click", onButton);
+            statusEl.append(inline);
+          }
+          return;
+        }
         // v5.34: unhide first, then set text — TalkBack only announces
         // live-region changes made while the region is rendered.
         banner.hidden = false;
@@ -7525,6 +7622,54 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
     }
 
+    // v5.35: TV remote support — D-pad left opens the side panel, the remote's
+    // play button starts the workout (or advances the guided session action).
+    function initTvRemote() {
+      if (!isTvDevice()) return;
+      const drawer = document.getElementById("tv-drawer");
+      function openTvDrawer() {
+        if (!drawer) return;
+        drawer.hidden = false;
+        requestAnimationFrame(() => drawer.classList.add("open"));
+        const first = drawer.querySelector("[data-tv-nav]");
+        if (first) first.focus();
+      }
+      function closeTvDrawer() {
+        if (!drawer) return;
+        drawer.classList.remove("open");
+        setTimeout(() => { drawer.hidden = true; }, 260);
+      }
+      document.querySelectorAll("[data-tv-nav]").forEach(button => {
+        button.addEventListener("click", () => {
+          const dest = button.getAttribute("data-tv-nav");
+          closeTvDrawer();
+          if (dest === "program") { openProgram(); return; }
+          openAppSection(dest);
+        });
+      });
+      document.getElementById("tv-drawer-close")?.addEventListener("click", closeTvDrawer);
+      document.addEventListener("keydown", (event) => {
+        const tag = (event.target && event.target.tagName || "").toLowerCase();
+        if (tag === "input" || tag === "textarea" || tag === "select") return;
+        const drawerOpen = drawer && !drawer.hidden && drawer.classList.contains("open");
+        const left = event.key === "ArrowLeft" || event.keyCode === 21;
+        const right = event.key === "ArrowRight" || event.keyCode === 22;
+        const back = event.key === "Escape" || event.keyCode === 4;
+        if (left && !drawerOpen) { event.preventDefault(); openTvDrawer(); return; }
+        if ((right || back) && drawerOpen) { event.preventDefault(); closeTvDrawer(); return; }
+        const play = event.key === "MediaPlayPause" || event.key === "MediaPlay" || [85, 126, 127, 179].indexOf(event.keyCode) >= 0;
+        if (play) {
+          const playerOpen = document.getElementById("player-dialog")?.open;
+          const action = document.getElementById("session-action");
+          if (playerOpen && action && !action.disabled) { event.preventDefault(); action.click(); return; }
+          if (document.getElementById("program-dialog")?.open) {
+            const start = document.getElementById("start-workout");
+            if (start) { event.preventDefault(); start.click(); }
+          }
+        }
+      });
+    }
+
     async function initGoogleCloud(restoredSession) {
       const signin = document.getElementById("google-signin");
       const signout = document.getElementById("google-signout");
@@ -7564,6 +7709,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     initGoogleCloud(restoredSession);
     initTvWelcome();
     initTvSync();
+    initTvRemote();
     renderNutritionPlans();
     checkForGymUpdate();
     // Re-check whenever the app comes back to the foreground (v5.14): a release
