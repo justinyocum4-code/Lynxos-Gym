@@ -81,6 +81,14 @@ jobs:
             echo "WARNING: tv_banner.png not found in repo; Leanback banner skipped."
           fi
 
+          # App launcher icon (v5.35): gold dumbbell on black.
+          if [ -f app_icon.png ]; then
+            cp app_icon.png app/src/main/res/drawable/app_icon.png
+            echo "App icon installed."
+          else
+            echo "WARNING: app_icon.png not found in repo; default icon used."
+          fi
+
           # Vendored Health Connect protobuf JARs (Maven resolution of these
           # two modules fails on the CI runner; they are shipped as files).
           mkdir -p app/libs
@@ -178,6 +186,7 @@ jobs:
               <uses-feature android:name="android.software.leanback" android:required="false"/>
               <application
                   android:label="Lynxos Gym"
+                  android:icon="@drawable/app_icon"
                   android:banner="@drawable/tv_banner"
                   android:theme="@android:style/Theme.Material.Light.NoActionBar">
                   <activity
