@@ -386,16 +386,24 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     .coach-svg { width: min(100%, 220px); height: auto; overflow: visible; }
     .coach-svg .scan { stroke: rgba(212,175,55,.22); stroke-width: 1; }
     .coach-svg .floor { stroke: #39747b; stroke-width: 3; stroke-linecap: round; }
+    /* v5.39: modern robot trainer — graphite limbs, gold joints, glowing visor */
     .coach-svg .trainer-shadow { fill: rgba(0,0,0,.24); }
-    .coach-svg .trainer-skin { fill: none; stroke: #c98763; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round; }
-    .coach-svg .trainer-leg { fill: none; stroke: #b87455; stroke-width: 14; stroke-linecap: round; stroke-linejoin: round; }
-    .coach-svg .trainer-shirt { fill: #8a6d1f; stroke: #eed27a; stroke-width: 2.5; stroke-linejoin: round; }
-    .coach-svg .trainer-shorts { fill: #172d36; stroke: #426b73; stroke-width: 2; }
-    .coach-svg .trainer-head { fill: #d49a76; stroke: #744632; stroke-width: 2.5; }
-    .coach-svg .trainer-hair { fill: #2a211f; }
-    .coach-svg .trainer-face { fill: none; stroke: #59382c; stroke-width: 1.8; stroke-linecap: round; }
-    .coach-svg .trainer-shoe { fill: none; stroke: #edf8f5; stroke-width: 11; stroke-linecap: round; }
-    .coach-svg .trainer-hand { fill: #d49a76; stroke: #744632; stroke-width: 1.5; }
+    .coach-svg .trainer-ring { fill: none; stroke: rgba(212,175,55,.45); stroke-width: 2; }
+    .coach-svg .trainer-limb { fill: none; stroke: #3a4a5f; stroke-width: 12; stroke-linecap: round; stroke-linejoin: round; }
+    .coach-svg .trainer-limb.trainer-arm { stroke-width: 10; }
+    .coach-svg .trainer-joint { fill: #d4af37; stroke: #6e5612; stroke-width: 1.5; }
+    .coach-svg .trainer-torso { fill: #243144; stroke: #d4af37; stroke-width: 2.5; stroke-linejoin: round; }
+    .coach-svg .trainer-pelvis { fill: #1b2532; stroke: #5b6b82; stroke-width: 2; stroke-linejoin: round; }
+    .coach-svg .trainer-core { fill: #39d0d8; stroke: #c8f6f8; stroke-width: 1.5; animation: coachPulse 2.2s ease-in-out infinite; }
+    .coach-svg .trainer-helmet { fill: #1f2a3b; stroke: #d4af37; stroke-width: 2.5; }
+    .coach-svg .trainer-visor { fill: #0b1118; stroke: #39d0d8; stroke-width: 1.5; }
+    .coach-svg .trainer-eye { fill: #6ff5fc; animation: coachBlink 3.6s infinite; }
+    .coach-svg .trainer-antenna { stroke: #8a97a8; stroke-width: 2; stroke-linecap: round; }
+    .coach-svg .trainer-antenna-tip { fill: #d4af37; animation: coachPulse 2.2s ease-in-out infinite; }
+    .coach-svg .trainer-hand { fill: #d4af37; stroke: #6e5612; stroke-width: 1.5; }
+    .coach-svg .trainer-shoe { fill: #cfd8e3; stroke: #6e5612; stroke-width: 1.5; }
+    @keyframes coachBlink { 0%, 91%, 100% { opacity: 1; } 94% { opacity: .08; } }
+    @keyframes coachPulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
     .coach-svg .pose-live { transform-box: fill-box; transform-origin: center; }
     .coach-badge {
       position: absolute; right: .35rem; top: .35rem; min-width: 3rem; min-height: 3rem;
@@ -950,9 +958,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     .plan-alternatives { display: flex; flex-wrap: wrap; gap: .45rem; }
     .plan-option { min-height: 42px; border: 2px solid var(--ink); background: var(--white); border-radius: 7px; padding: .4rem .6rem; font-weight: 700; cursor: pointer; }
     .plan-option[aria-pressed="true"] { background: var(--ink); color: var(--white); box-shadow: inset 0 0 0 2px var(--mint); }
-    .program-nav { display: flex; gap: .6rem; align-items: center; padding: .7rem 1rem; border-top: 2px solid var(--ink); background: var(--white); }
-    .program-nav button { min-height: 48px; }
-    .program-nav .primary { margin-left: auto; }
     .program-app-nav {
       min-height: 68px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
       padding: 0 max(.35rem, env(safe-area-inset-left)) env(safe-area-inset-bottom) max(.35rem, env(safe-area-inset-right));
@@ -1058,7 +1063,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       .wizard-next { min-width: 112px; }
       .program-dialog { width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border: 0; border-radius: 0; }
       .program-dialog .dialog-head { padding: .75rem .85rem; }
-      .program-toolbar, .program-page, .program-nav { padding-left: .75rem; padding-right: .75rem; }
+      .program-toolbar, .program-page { padding-left: .75rem; padding-right: .75rem; }
       .program-app-nav button { font-size: .7rem; }
       .bottom-nav-link { font-size: .72rem; padding-left: .12rem; padding-right: .12rem; }
       .program-move { grid-template-columns: 1.75rem minmax(0,1fr) auto; padding: .38rem .25rem; }
@@ -1091,7 +1096,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
       *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
-      .coach-svg .pose-live { animation: none !important; }
+      /* v5.39: Justin explicitly asked for a moving AI coach, so the robot's
+         visor blink and core pulse keep running even with reduced motion on. */
+      .coach-svg .trainer-eye { animation: coachBlink 3.6s infinite !important; }
+      .coach-svg .trainer-core, .coach-svg .trainer-antenna-tip { animation: coachPulse 2.2s ease-in-out infinite !important; }
     }
 
       /* v5.9: slim sticky timer bar + compact session dock */
@@ -1959,10 +1967,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="program-page" id="program-page" tabindex="-1"></div>
       <div class="program-start-dock">
         <button class="primary" type="button" id="start-workout">Start workout</button>
-      </div>
-      <div class="program-nav">
-        <button class="secondary" style="color:var(--ink);border-color:var(--ink)" type="button" id="program-prev">Previous day</button>
-        <button class="primary" type="button" id="program-next">Next day</button>
+        <button class="primary" type="button" id="rest-continue" hidden>Rest complete — continue</button>
       </div>
       <nav class="program-app-nav" aria-label="Workout app navigation">
         <button type="button" data-program-destination="program" aria-label="Workout plan, current section">
@@ -2909,8 +2914,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.38";
-    const LYNXOS_APP_VERSION_CODE = 54; // BUMP every release or the update banner never fires
+    const LYNXOS_APP_VERSION = "5.39";
+    const LYNXOS_APP_VERSION_CODE = 55; // BUMP every release or the update banner never fires
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
       const help = document.getElementById("health-connect-help");
@@ -3241,7 +3246,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       },
       {
         title: "Follow one workout at a time",
-        copy: "Open a program, review the exercises, and choose Start workout. A pain check appears before the guided session begins.",
+        copy: "Open a program, review the exercises, and choose Start workout. A pain check appears before the guided session begins. A rest day follows every training day — tap Rest complete to reveal the next workout.",
         points: ["Strength movements use sets and reps.", "The coach speaks countdowns and form cues when voice coaching is on."]
       },
       {
@@ -3256,12 +3261,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       },
       {
         title: "Learn and track progress",
-        copy: "Nutrition has practical food guidance. Progress shows workout totals and achievements. Profile holds settings, your questionnaire, and this tour.",
+        copy: "Nutrition has practical food guidance. Progress shows workout totals and achievements. Profile holds settings, your fitness profile, and this tour.",
         points: ["The bottom navigation opens Workout, Exercises, Nutrition, Progress, and Profile.", "TalkBack announces selected filters, favorites, and workout state changes."]
       },
       {
         title: "Recover before the next cycle",
-        copy: "After four training weeks, each program includes an optional easier deload week before you generate another cycle.",
+        copy: "Rest days sit between every training day. After four training weeks, each program includes an optional easier deload week before you generate another cycle.",
         points: ["Deload workouts use fewer sets and familiar movements.", "Deload progress belongs to that program only."]
       }
     ];
@@ -3365,11 +3370,74 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
 
     function hardWorkoutCount(program = state.program) {
-      return program.filter(item => !item.isDeload).length;
+      return program.filter(item => !item.isDeload && !item.isRestDay).length;
     }
 
     function completedHardWorkoutCount() {
-      return [...state.completedProgramPages].filter(index => state.program[index] && !state.program[index].isDeload).length;
+      return [...state.completedProgramPages].filter(index => state.program[index] && !state.program[index].isDeload && !state.program[index].isRestDay).length;
+    }
+
+    // v5.39: every program interleaves recovery days. A rest day follows each
+    // training day so muscles rebuild between sessions.
+    function makeRestDay(week, day) {
+      return {
+        week, day, focus: "rest", moves: [], rounds: 0, isRestDay: true, isDeload: false,
+        note: "Recovery day: your muscles rebuild while you rest. Easy walking or gentle mobility is fine if it feels good.",
+        progression: "Rest target: sleep well, drink water, and eat enough protein. Come back ready for the next training day."
+      };
+    }
+    function trainingDayNumber() {
+      let n = 0;
+      for (let i = 0; i <= state.programPage; i += 1) {
+        const entry = state.program[i];
+        if (entry && !entry.isDeload && !entry.isRestDay) n += 1;
+      }
+      return n;
+    }
+    // Insert rest days into a plan saved before v5.39. Returns the new plan plus
+    // a map from old page indexes to new ones so progress is preserved.
+    function insertRestDays(plan) {
+      if (!Array.isArray(plan) || !plan.length) return { plan, indexMap: null };
+      if (plan.some(item => item && item.isRestDay)) return { plan, indexMap: null };
+      if (!plan.some(item => item && !item.isDeload)) return { plan, indexMap: null };
+      const indexMap = new Map();
+      const next = [];
+      plan.forEach((item, oldIndex) => {
+        indexMap.set(oldIndex, next.length);
+        next.push(item);
+        if (item && !item.isDeload) next.push(makeRestDay(item.week, item.day));
+      });
+      return { plan: next, indexMap };
+    }
+    function remapPlanIndex(indexMap, index) {
+      if (!indexMap || index == null) return index;
+      return indexMap.has(index) ? indexMap.get(index) : index;
+    }
+    function migrateRecordPlan(record) {
+      if (!record || !Array.isArray(record.plan)) return;
+      const migrated = insertRestDays(record.plan);
+      if (!migrated.indexMap) return;
+      record.plan = migrated.plan;
+      record.page = remapPlanIndex(migrated.indexMap, record.page || 0);
+      record.lastCompletedPage = remapPlanIndex(migrated.indexMap, record.lastCompletedPage);
+      const completed = record.completedPages;
+      record.completedPages = new Set([...(completed || [])].map(i => remapPlanIndex(migrated.indexMap, i)));
+    }
+    // One-time upgrade for programs saved before rest days existed: splice rest
+    // days into the active plan and every saved program, keeping the current
+    // page on the same workout.
+    function migrateRestDaysIntoState() {
+      const migrated = insertRestDays(state.program);
+      if (migrated.indexMap) {
+        state.program = migrated.plan;
+        state.programPage = remapPlanIndex(migrated.indexMap, state.programPage);
+        state.lastCompletedPage = remapPlanIndex(migrated.indexMap, state.lastCompletedPage);
+        state.completedProgramPages = new Set([...state.completedProgramPages].map(i => remapPlanIndex(migrated.indexMap, i)));
+        const current = state.program[state.programPage];
+        state.workout = (current && current.moves) || [];
+        state.rounds = (current && current.rounds) || 2;
+      }
+      state.programs.forEach(migrateRecordPlan);
     }
 
     function activeProgramRecord() {
@@ -3396,6 +3464,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
     function loadProgramRecord(record) {
       if (!record) return;
+      migrateRecordPlan(record);
       state.activeProgramId = record.id;
       state.program = record.plan;
       state.programPage = Math.max(0, Math.min(record.plan.length - 1, record.page || 0));
@@ -3923,27 +3992,38 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function coachTorsoPoints(P) {
       return `${P.sl[0]},${P.sl[1]} ${P.sr[0]},${P.sr[1]} ${P.hip[0] + 11},${P.hip[1] - 2} ${P.hip[0] - 11},${P.hip[1] - 2}`;
     }
-    function coachShortsPoints(P) {
+    function coachPelvisPoints(P) {
       return `${P.hip[0] - 12},${P.hip[1] - 3} ${P.hip[0] + 12},${P.hip[1] - 3} ${P.kr[0] - 5},${P.kr[1] - 16} ${P.hip[0]},${P.hip[1] + 12} ${P.kl[0] + 5},${P.kl[1] - 16}`;
     }
-    function coachHairPath(hx, hy) {
-      return `M${hx - 13} ${hy - 3} Q${hx - 9} ${hy - 18} ${hx + 9} ${hy - 13} Q${hx + 15} ${hy - 8} ${hx + 12} ${hy - 2} Q${hx + 4} ${hy - 9} ${hx - 13} ${hy - 3}Z`;
-    }
-    function coachFacePath(hx, hy) {
-      return `M${hx - 5} ${hy + 1}h1 M${hx + 4} ${hy + 1}h1 M${hx - 4} ${hy + 7}q4 3 8 0`;
-    }
-    function coachSkeletonMarkup(P) {
+    // v5.39: modern robot trainer — helmet with glowing visor, pulsing chest
+    // core, gold joints and hands. The pose system is unchanged, so every
+    // exercise demo still drives the same joint positions.
+    function coachRobotMarkup(P) {
       const seg = (a, b, cls) => `<line class="${cls}" data-seg="${a} ${b}" x1="${P[a][0]}" y1="${P[a][1]}" x2="${P[b][0]}" y2="${P[b][1]}"/>`;
+      const joint = (key, r) => `<circle class="trainer-joint" data-joint="${key}" cx="${P[key][0]}" cy="${P[key][1]}" r="${r}"/>`;
+      const hx = P.head[0], hy = P.head[1];
+      const coreCx = (P.sl[0] + P.sr[0]) / 2, coreCy = (P.sl[1] + P.sr[1]) / 2 + 15;
       return `<ellipse class="trainer-shadow" cx="120" cy="194" rx="50" ry="5"/>`
-        + COACH_SEGS.map(([a, b, cls]) => seg(a, b, cls)).join("")
-        + `<polygon class="trainer-shirt" points="${coachTorsoPoints(P)}"/>`
-        + `<polygon class="trainer-shorts" points="${coachShortsPoints(P)}"/>`
-        + `<circle class="trainer-head" cx="${P.head[0]}" cy="${P.head[1]}" r="14"/>`
-        + `<path class="trainer-hair" d="${coachHairPath(P.head[0], P.head[1])}"/>`
-        + `<path class="trainer-face" d="${coachFacePath(P.head[0], P.head[1])}"/>`
-        + `<circle class="trainer-hand" data-hand="hl" cx="${P.hl[0]}" cy="${P.hl[1]}" r="6"/><circle class="trainer-hand" data-hand="hr" cx="${P.hr[0]}" cy="${P.hr[1]}" r="6"/>`
-        + `<line class="trainer-shoe" data-shoe="fl" x1="${P.fl[0] - 5}" y1="${P.fl[1]}" x2="${P.fl[0] + 7}" y2="${P.fl[1]}"/>`
-        + `<line class="trainer-shoe" data-shoe="fr" x1="${P.fr[0] - 5}" y1="${P.fr[1]}" x2="${P.fr[0] + 7}" y2="${P.fr[1]}"/>`;
+        + `<ellipse class="trainer-ring" cx="120" cy="194" rx="60" ry="8"/>`
+        + seg("hip", "kl", "trainer-limb") + seg("kl", "fl", "trainer-limb")
+        + seg("hip", "kr", "trainer-limb") + seg("kr", "fr", "trainer-limb")
+        + `<rect class="trainer-shoe" data-shoe="fl" x="${P.fl[0] - 10}" y="${P.fl[1] - 5}" width="20" height="9" rx="4.5"/>`
+        + `<rect class="trainer-shoe" data-shoe="fr" x="${P.fr[0] - 10}" y="${P.fr[1] - 5}" width="20" height="9" rx="4.5"/>`
+        + `<polygon class="trainer-pelvis" points="${coachPelvisPoints(P)}"/>`
+        + `<polygon class="trainer-torso" points="${coachTorsoPoints(P)}"/>`
+        + `<circle class="trainer-core" cx="${coreCx}" cy="${coreCy}" r="5.5"/>`
+        + seg("sl", "el", "trainer-limb trainer-arm") + seg("el", "hl", "trainer-limb trainer-arm")
+        + seg("sr", "er", "trainer-limb trainer-arm") + seg("er", "hr", "trainer-limb trainer-arm")
+        + `<circle class="trainer-hand" data-hand="hl" cx="${P.hl[0]}" cy="${P.hl[1]}" r="6.5"/><circle class="trainer-hand" data-hand="hr" cx="${P.hr[0]}" cy="${P.hr[1]}" r="6.5"/>`
+        + joint("kl", 6) + joint("kr", 6) + joint("el", 5) + joint("er", 5) + joint("sl", 6.5) + joint("sr", 6.5)
+        + `<g class="trainer-head-g" transform="translate(${hx} ${hy})">`
+        + `<line class="trainer-antenna" x1="7" y1="-13" x2="11" y2="-23"/>`
+        + `<circle class="trainer-antenna-tip" cx="11" cy="-25" r="3"/>`
+        + `<circle class="trainer-helmet" r="15"/>`
+        + `<rect class="trainer-visor" x="-10.5" y="-6" width="21" height="10.5" rx="5"/>`
+        + `<circle class="trainer-eye" cx="-4.5" cy="-0.8" r="2.3"/>`
+        + `<circle class="trainer-eye" cx="4.5" cy="-0.8" r="2.3" style="animation-delay:.15s"/>`
+        + `</g>`;
     }
     function updateCoachFrame(svg, A, B, now) {
       const raw = coachOrganicPose(A, B, now);
@@ -3954,26 +4034,32 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         line.setAttribute("x1", P[a][0]); line.setAttribute("y1", P[a][1]);
         line.setAttribute("x2", P[b][0]); line.setAttribute("y2", P[b][1]);
       });
-      const hx = P.head[0], hy = P.head[1];
-      const head = svg.querySelector("circle.trainer-head");
-      if (head) { head.setAttribute("cx", hx); head.setAttribute("cy", hy); }
-      const hair = svg.querySelector("path.trainer-hair");
-      if (hair) hair.setAttribute("d", coachHairPath(hx, hy));
-      const face = svg.querySelector("path.trainer-face");
-      if (face) face.setAttribute("d", coachFacePath(hx, hy));
+      svg.querySelectorAll("circle.trainer-joint").forEach(joint => {
+        const key = joint.getAttribute("data-joint");
+        joint.setAttribute("cx", P[key][0]);
+        joint.setAttribute("cy", P[key][1]);
+      });
+      const headG = svg.querySelector("g.trainer-head-g");
+      if (headG) headG.setAttribute("transform", `translate(${P.head[0]} ${P.head[1]})`);
+      const core = svg.querySelector("circle.trainer-core");
+      if (core) {
+        core.setAttribute("cx", (P.sl[0] + P.sr[0]) / 2);
+        core.setAttribute("cy", (P.sl[1] + P.sr[1]) / 2 + 15);
+      }
+      const torso = svg.querySelector("polygon.trainer-torso");
+      if (torso) torso.setAttribute("points", coachTorsoPoints(P));
+      const pelvis = svg.querySelector("polygon.trainer-pelvis");
+      if (pelvis) pelvis.setAttribute("points", coachPelvisPoints(P));
       svg.querySelectorAll("circle.trainer-hand").forEach(hand => {
         const key = hand.getAttribute("data-hand");
-        hand.setAttribute("cx", P[key][0]); hand.setAttribute("cy", P[key][1]);
+        hand.setAttribute("cx", P[key][0]);
+        hand.setAttribute("cy", P[key][1]);
       });
-      svg.querySelectorAll("line.trainer-shoe").forEach(shoe => {
+      svg.querySelectorAll("rect.trainer-shoe").forEach(shoe => {
         const key = shoe.getAttribute("data-shoe");
-        shoe.setAttribute("x1", P[key][0] - 5); shoe.setAttribute("y1", P[key][1]);
-        shoe.setAttribute("x2", P[key][0] + 7); shoe.setAttribute("y2", P[key][1]);
+        shoe.setAttribute("x", P[key][0] - 10);
+        shoe.setAttribute("y", P[key][1] - 5);
       });
-      const shirt = svg.querySelector("polygon.trainer-shirt");
-      if (shirt) shirt.setAttribute("points", coachTorsoPoints(P));
-      const shorts = svg.querySelector("polygon.trainer-shorts");
-      if (shorts) shorts.setAttribute("points", coachShortsPoints(P));
     }
     let coachAnimRunning = false;
     // Organic coach motion: each limb group moves on its own phase so joints do not
@@ -4002,7 +4088,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return P;
     }
     function tickCoachFrames(now) {
-      if (document.hidden || window.matchMedia("(prefers-reduced-motion: reduce)").matches) { coachAnimRunning = false; return; }
+      if (document.hidden) { coachAnimRunning = false; return; }
       let any = false;
       document.querySelectorAll(".coach-svg[data-motion]").forEach(svg => {
         if (!svg.isConnected || svg.offsetParent === null) return;
@@ -4013,28 +4099,35 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       coachAnimRunning = any;
       if (any) requestAnimationFrame(tickCoachFrames);
     }
+    // v5.39: Justin explicitly asked for a moving AI coach, so coach motion is
+    // no longer gated on the device's reduced-motion setting.
     function kickCoachFrames() {
-      if (coachAnimRunning || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      if (coachAnimRunning) return;
       coachAnimRunning = true;
       requestAnimationFrame(tickCoachFrames);
     }
 
     function coachSvg(motion) {
       const pair = coachPoses[motion] || coachPoses.stand;
-      const frame = coachSkeletonMarkup(coachLerpPose(pair[0], pair[1], 0));
-      kickCoachFrames();
+      const frame = coachRobotMarkup(coachLerpPose(pair[0], pair[1], 0));
+      // v5.39: animation is started by the caller AFTER the markup is inserted
+      // into the document — starting it here was why the coach never moved.
       return `<svg class="coach-svg" data-motion="${motion}" viewBox="0 0 240 210" aria-hidden="true" focusable="false"><path class="scan" d="M15 40H225M15 80H225M15 120H225M15 160H225"/><path class="floor" d="M25 194H215"/><g class="pose-live">${frame}</g></svg>`;
     }
 
     function renderCoach(ex, context = "details") {
       const demo = demoProfiles[ex.id] || { motion: "stand", caption: ex.cue };
       const heading = context === "session" ? "Coach cue" : "Animated demonstration";
+      // v5.39: start the coach animation on the next frame, after the caller
+      // has inserted this markup into the document.
+      requestAnimationFrame(() => kickCoachFrames());
       return `<div class="ai-coach" role="group" aria-label="AI coach demonstration for ${escapeText(ex.name)}. ${escapeText(demo.caption)}"><div class="coach-visual"><span class="coach-badge" aria-hidden="true">AI</span>${coachSvg(demo.motion)}</div><div class="coach-copy"><p class="coach-label">AI COACH · LOOPING DEMO</p><h3>${heading}</h3><p class="coach-caption">${escapeText(demo.caption)}</p><p class="coach-tip">Watch the start and finish positions, then move at your own controlled pace.</p></div></div>`;
     }
 
     function renderHeroCoach() {
       const ex = exercises.find(item => item.id === "kb-goblet");
       document.getElementById("hero-coach").innerHTML = `<div class="coach-console" role="img" aria-label="Animated AI coach demonstrating a goblet squat"><div class="console-head"><span>FORM GUIDE 01</span><span class="console-status">COACH ONLINE</span></div><div class="coach-visual">${coachSvg("squat")}</div><p class="console-caption">“Chest tall. Sit between your heels.”</p></div>`;
+      kickCoachFrames();
     }
 
     function syncBuilderControls() {
@@ -4201,11 +4294,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (!item) {
         workoutWrap.innerHTML = "<p><strong>No training program yet.</strong> Build your 4-week plan in the Workout section and it will appear here beside your meals.</p>";
       } else {
-        const focusName = { full: "Full body", upper: "Upper body", lower: "Lower body", core: "Core and stability" }[item.focus] || "Workout";
-        const dayLabel = item.isDeload ? "Deload workout" : ("Week " + item.week + ", day " + item.day);
-        workoutWrap.innerHTML = "<p><strong>Today&apos;s training: " + escapeText(dayLabel) + " — " + escapeText(focusName) + ".</strong><br>" +
-          item.moves.length + " exercises, " + item.rounds + " rounds.</p>" +
-          "<button class=\"primary\" type=\"button\" id=\"today-open-workout\">Open today&apos;s workout</button>";
+        if (item.isRestDay) {
+          workoutWrap.innerHTML = "<p><strong>Today is a recovery day.</strong><br>Easy walking or gentle mobility is fine. Your next training day unlocks after you rest.</p>" +
+            "<button class=\"primary\" type=\"button\" id=\"today-open-workout\">Open program</button>";
+        } else {
+          const focusName = { full: "Full body", upper: "Upper body", lower: "Lower body", core: "Core and stability" }[item.focus] || "Workout";
+          const dayLabel = item.isDeload ? "Deload workout" : ("Week " + item.week + ", day " + item.day);
+          workoutWrap.innerHTML = "<p><strong>Today&apos;s training: " + escapeText(dayLabel) + " — " + escapeText(focusName) + ".</strong><br>" +
+            item.moves.length + " exercises, " + item.rounds + " rounds.</p>" +
+            "<button class=\"primary\" type=\"button\" id=\"today-open-workout\">Open today&apos;s workout</button>";
+        }
         const btn = document.getElementById("today-open-workout");
         if (btn) btn.addEventListener("click", function () { openProgram(); });
       }
@@ -4819,6 +4917,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           const baseRounds = state.programStyle === "gentle" || needsGentleStart ? 2 : state.programStyle === "short" ? 2 : state.duration === 35 ? Math.max(4, goalVolume.rounds) : goalVolume.rounds;
           const rounds = Math.min(5, baseRounds + (week >= 3 ? 1 : 0));
           program.push({ week, day, focus, moves, rounds, note: weekNotes[week - 1] + (week === 1 ? trainerMethod : "") + cycleNote, progression: weekProgressions[week - 1], isDeload: false });
+          // v5.39: a recovery day follows every training day.
+          program.push(makeRestDay(week, day));
         }
       }
       for (let day = 1; day <= daysPerWeek; day += 1) {
@@ -4960,9 +5060,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const hardTotal = hardWorkoutCount();
       const deloadNumber = item.isDeload ? state.program.slice(0, state.programPage + 1).filter(entry => entry.isDeload).length : 0;
       const deloadTotal = state.program.filter(entry => entry.isDeload).length;
+      const isRestDay = Boolean(item.isRestDay);
       document.getElementById("program-title").textContent = `${activeProgramRecord()?.name || "My Program"} workout program`;
-      document.getElementById("program-week").textContent = item.isDeload ? `Deload week · ${item.rounds} easy rounds` : `Week ${item.week} · ${item.rounds} rounds`;
-      document.getElementById("program-position").textContent = item.isDeload ? `Deload workout ${deloadNumber} of ${deloadTotal}` : `Workout ${state.programPage + 1} of ${hardTotal}`;
+      document.getElementById("program-week").textContent = isRestDay ? `Week ${item.week} · Rest day` : item.isDeload ? `Deload week · ${item.rounds} easy rounds` : `Week ${item.week} · ${item.rounds} rounds`;
+      document.getElementById("program-position").textContent = isRestDay ? "Recovery day" : item.isDeload ? `Deload workout ${deloadNumber} of ${deloadTotal}` : `Workout ${trainingDayNumber()} of ${hardTotal}`;
       const focusName = {full:"Full body",upper:"Upper body",lower:"Lower body",core:"Core and stability"}[item.focus];
       const options = programStyleOptions();
       const resumeMarkup = state.savedSession ? `
@@ -4974,7 +5075,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             <button class="secondary" style="color:var(--ink);border-color:var(--ink)" type="button" id="discard-saved-workout">Discard saved workout</button>
           </div>
         </div>` : "";
-      document.getElementById("program-page").innerHTML = `
+      const restDayBody = `
+        <h3>Rest day: recovery</h3>
+        <p class="program-purpose">${item.note}</p>
+        <p class="plan-note"><strong>${item.progression}</strong></p>
+        <div class="program-feedback"><p>Light movement is welcome today.</p><span>Easy walking, gentle stretching, or relaxed mobility is fine if it feels good. Avoid hard training for sore muscles on back-to-back days — rest is when muscles rebuild. When you feel rested, choose &ldquo;Rest complete&rdquo; below to reveal the next training day.</span></div>`;
+      const trainingDayBody = `
         ${resumeMarkup}
         <h3>${item.isDeload ? "Deload" : `Day ${item.day}`}: ${focusName}</h3>
         <p class="program-purpose">${item.note}</p>
@@ -4984,6 +5090,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div class="program-moves" aria-label="Exercises for ${item.isDeload ? `deload workout ${deloadNumber}` : `week ${item.week}, day ${item.day}`}">
           ${item.moves.map((ex, index) => `<div class="program-move"><strong aria-hidden="true">${index + 1}</strong><div><strong>${ex.name}</strong><span>${programDose(ex, item.rounds)}${equipmentPrescription(ex) ? ` · ${equipmentPrescription(ex)}` : ""}</span></div><div class="program-move-actions"><button type="button" data-detail="${ex.id}" aria-label="Instructions for ${ex.name}">How to</button><button class="swap-btn" type="button" data-swap-index="${index}" aria-label="Swap ${ex.name} for an alternative">Swap</button></div></div>`).join("")}
         </div>`;
+      document.getElementById("program-page").innerHTML = isRestDay ? restDayBody : trainingDayBody;
       const startWorkoutButton = document.getElementById("start-workout");
       startWorkoutButton.textContent = state.savedSession ? "Start this workout from the beginning" : (item.isDeload ? "Start easier deload workout" : "Start workout");
       document.getElementById("resume-saved-workout")?.addEventListener("click", resumeSavedSession);
@@ -5004,9 +5111,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         programDialog.close();
         startSession();
       });
-      document.getElementById("program-prev").disabled = state.programPage === 0;
-      document.getElementById("program-next").textContent = state.programPage === total - 1 ? "Last workout" : (state.program[state.programPage + 1]?.isDeload && !item.isDeload ? "Next: deload week" : "Next day");
-      document.getElementById("program-next").disabled = state.programPage === total - 1;
+      // v5.39: rest days offer "Rest complete — continue" instead of "Start workout".
+      document.getElementById("start-workout").hidden = isRestDay;
+      document.getElementById("rest-continue").hidden = !isRestDay;
       saveActiveProgramRecord();
       syncProgramManager();
       if (announce) {
@@ -6527,11 +6634,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }));
     }
 
-    function buildWorkoutSummary() {
-      const programItem = state.quickSession ? null : state.program[state.programPage];
+    function buildWorkoutSummary(finishedItem) {
+      const programItem = state.quickSession ? null : (finishedItem || state.program[state.programPage]);
       const elapsedSeconds = state.workoutStartedAt ? Math.max(1, Math.round((Date.now() - state.workoutStartedAt) / 1000)) : 0;
       const elapsed = elapsedSeconds < 60 ? "under 1 minute" : `${Math.round(elapsedSeconds / 60)} minutes`;
-      const heading = state.quickSession ? state.activeWorkoutLabel : (programItem ? (programItem.isDeload ? `Deload week, workout ${programItem.day}` : `Week ${programItem.week}, day ${programItem.day}`) : "Guided workout");
+      const heading = state.quickSession ? state.activeWorkoutLabel : (programItem ? (programItem.isRestDay ? `Rest day, week ${programItem.week}` : programItem.isDeload ? `Deload week, workout ${programItem.day}` : `Week ${programItem.week}, day ${programItem.day}`) : "Guided workout");
       const exerciseLines = state.workout.map(exercise => `• ${exercise.name}: ${state.playerTotalSets} sets of ${exercise.dose}`).join("\n");
       return `Lynxos Gym — workout complete\n${heading}\n\n${exerciseLines}\n\nGuided warm-up and cool-down completed\nElapsed time: ${elapsed}\nAchievements earned: ${state.earnedAchievements.size}`;
     }
@@ -6741,6 +6848,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const completedQuickSession = state.quickSession;
       completeCurrentWorkout();
       const finishedTrainingBlock = !completedQuickSession && state.deloadSuggested && !state.program[state.programPage]?.isDeload;
+      const finishedItem = state.program[state.programPage];
       // v5.25: finishing a workout moves the program to the next day automatically,
       // so the next session opens on day two instead of replaying the same day.
       let advancedToNext = false;
@@ -6752,7 +6860,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
       const nextPage = advancedToNext ? state.program[state.programPage] : null;
       const nextDayText = nextPage
-        ? (nextPage.isDeload ? "The easier deload workout is up next." : `Day ${nextPage.day} of week ${nextPage.week} is up next.`)
+        ? (nextPage.isRestDay ? "A rest day is up next. Recover well and come back ready."
+          : nextPage.isDeload ? "The easier deload workout is up next."
+          : `Day ${nextPage.day} of week ${nextPage.week} is up next.`)
         : "";
       saveWorkoutToHistory();
       state.playerPhase = "complete";
@@ -6761,7 +6871,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       state.timerOnComplete = null;
       syncWorkoutMusic();
       syncSessionManagement();
-      state.lastWorkoutSummary = buildWorkoutSummary();
+      state.lastWorkoutSummary = buildWorkoutSummary(finishedItem);
       document.getElementById("session-phase").textContent = "Workout complete";
       document.getElementById("player-progress").textContent = "Session complete";
       document.getElementById("player-exercise").textContent = "Strong work";
@@ -7012,11 +7122,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     editProfileDialog.addEventListener("close", queueNavigationUpdate);
     editProfileDialog.addEventListener("cancel", event => { event.preventDefault(); closeEditProfile(); });
     document.getElementById("generate").addEventListener("click", () => buildWorkout(true));
-    document.getElementById("program-prev").addEventListener("click", () => {
-      if (state.programPage > 0) { state.programPage -= 1; renderProgramPage(); }
-    });
-    document.getElementById("program-next").addEventListener("click", () => {
-      if (state.programPage < state.program.length - 1) { state.programPage += 1; renderProgramPage(); }
+    // v5.39: no Previous/Next day buttons — the program shows only the current
+    // day. Finishing a workout (or tapping through a rest day) reveals the next day.
+    document.getElementById("rest-continue").addEventListener("click", () => {
+      if (state.programPage < state.program.length - 1) {
+        state.programPage += 1;
+        state.workout = state.program[state.programPage]?.moves || [];
+        state.rounds = state.program[state.programPage]?.rounds || 2;
+        saveActiveProgramRecord();
+        syncProgramManager();
+        renderProgramPage();
+        requestAnimationFrame(() => { const page = document.getElementById("program-page"); if (page) page.focus(); });
+      }
     });
     document.querySelectorAll("[data-close]").forEach(btn => btn.addEventListener("click", () => document.getElementById(btn.dataset.close).close()));
     document.getElementById("detail-back").addEventListener("click", returnFromDetail);
@@ -7909,6 +8026,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
     prepareAccessibleOptions();
     const restoredSession = restoreAppState();
+    migrateRestDaysIntoState();
     syncCalculatorUnits(false);
     syncVoiceCoachMode(false);
     syncSessionManagement();
@@ -7947,7 +8065,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     document.body.classList.remove("app-screen-view");
     document.getElementById("screen-header").hidden = true;
     syncBuilderVisibility();
-    if (!isTvDevice() && !restoredSession && !hasSeenTour()) openTour("onboarding");
+    // v5.39: no automatic popups on first open. The tour is still available
+    // from Profile -> "Replay app tour" for anyone who wants the guided walkthrough.
   </script>
 </body>
 </html>
