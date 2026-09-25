@@ -99,6 +99,31 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     #tv-welcome-google-slot p, #tv-welcome-qr-slot p { font-size: 1.15rem; }
     #tv-welcome-qr-slot #tv-qr svg { width: 240px; height: 240px; }
     #tv-open-setup { margin: 1rem 0; font-size: 1.1rem; }
+    /* ---- v5.38 TV lean-back home ---- */
+    .tv-home { position: fixed; inset: 0; z-index: 150; background: #0a0a0a; color: #f5f5f5; overflow-y: auto; padding: 3rem 2rem; display: none; }
+    .tv-home[hidden] { display: none; }
+    body.tv .tv-home:not([hidden]) { display: grid; place-items: center; }
+    .tv-home-inner { text-align: center; max-width: 60rem; }
+    .tv-home h1 { color: var(--yellow); font-size: 3.4rem; margin: 0 0 .5rem; }
+    .tv-home-sync { font-size: 1.35rem; color: #d6d6d6; margin: 0 0 2rem; }
+    .tv-home-actions { display: grid; gap: 1.2rem; max-width: 34rem; margin: 0 auto; }
+    .tv-home-btn { min-height: 96px; font-size: 1.8rem; font-weight: 800; background: #1a1a1a; color: #f5f5f5; border: 3px solid #4a4a4a; border-radius: 14px; cursor: pointer; }
+    .tv-home-btn:focus { border-color: var(--yellow); outline: 4px solid var(--yellow); }
+    .tv-home-btn.primary { background: var(--yellow); color: #141414; border-color: var(--yellow); }
+    .tv-home-hint { margin-top: 2.2rem; color: #9a9a9a; font-size: 1.05rem; }
+    /* ---- v5.38 TV lean-back player ---- */
+    body.tv .player h3#player-exercise { font-size: clamp(3rem, 7vw, 5rem); color: var(--yellow); }
+    body.tv .timer { font-size: clamp(6rem, 20vw, 11rem); }
+    body.tv #player-progress.round { font-size: 1.7rem; }
+    body.tv .session-phase { font-size: 1.5rem; }
+    body.tv #player-upnext { font-size: 1.6rem; color: var(--yellow); font-weight: 700; margin: .6rem 0; }
+    body.tv #player-dose { font-size: 1.35rem; }
+    body.tv .player .coach-svg { width: min(100%, 380px); }
+    body.tv .player .coach-caption { font-size: 1.5rem; }
+    body.tv .player .ai-coach { text-align: center; }
+    body.tv .session-action-dock { grid-template-columns: minmax(0, 1fr); }
+    body.tv .session-action-dock button { min-height: 76px; font-size: 1.35rem; }
+    body.tv .voice-coach-bar, body.tv .session-tools { font-size: 1.2rem; }
 
     .hero {
       background:
@@ -676,6 +701,25 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     .profile-actions { display: flex; flex-wrap: wrap; gap: .65rem; }
     .profile-actions button { min-height: 48px; }
     .profile-actions .secondary { color: var(--ink); border-color: var(--ink); }
+    .meal-cost { color: #ffd75e; font-weight: 700; margin: .3rem 0 0; }
+    .meal-swap { color: #b9d9d7; font-size: .95rem; margin: .2rem 0 0; }
+    .meal-week-total { font-size: 1.1rem; margin: .8rem 0; }
+    .cheap-protein-list { padding-left: 1.4rem; margin: .6rem 0; }
+    .cheap-protein-list li { margin: .4rem 0; }
+    body.tv .meal-slot { font-size: 1.35rem; }
+    body.tv .meal-slot h4 { font-size: 1.7rem; }
+    body.tv .day-picker button { min-height: 72px; font-size: 1.3rem; }
+    body.tv .nutrition-card { font-size: 1.25rem; }
+    body.tv .nutrition-card h3 { font-size: 1.7rem; }
+    .tv-handoff {
+      border: 2px solid #d4af37; border-radius: 12px; padding: 1.1rem 1.2rem; margin: 0 0 1.2rem;
+      background: #1e1a10; text-align: center;
+    }
+    .tv-handoff h4 { margin: 0 0 .5rem; font-size: 1.25rem; color: #ffd75e; }
+    .tv-handoff p { margin: .5rem 0; }
+    .tv-handoff-code { font-size: 2.4rem; font-weight: 800; letter-spacing: .35rem; color: #ffd75e; margin: .6rem 0; }
+    .tv-handoff-steps { text-align: left; max-width: 420px; margin: .6rem auto; padding-left: 1.4rem; }
+    .tv-handoff-steps li { margin: .35rem 0; }
     .profile-dialog {
       width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0;
       border: 0; border-radius: 0; background: #171717; overflow: hidden;
@@ -746,12 +790,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     body.app-screen-view .builder, body.app-screen-view .library-grid, body.app-screen-view .achievement-summary,
     body.app-screen-view .achievement-grid { width: 100%; max-width: none; }
 
-    .onboarding-dialog {
+    .edit-profile-dialog {
       width: min(1120px, calc(100vw - 1rem)); height: min(820px, calc(100dvh - 1rem));
       max-width: none; max-height: calc(100dvh - 1rem); overflow: hidden; background: #171717;
     }
-    .onboarding-dialog .dialog-head { position: relative; z-index: 3; }
-    .onboarding-dialog .dialog-body { height: calc(100% - 72px); padding: 0; display: flex; flex-direction: column; }
+    .edit-profile-dialog .dialog-head { position: relative; z-index: 3; }
+    .edit-profile-dialog .dialog-body { height: calc(100% - 72px); padding: 1rem 1.25rem; overflow-y: auto; }
+    .edit-profile-steps .wizard-step { max-width: none; margin: 0 0 1.6rem; padding-bottom: 1.2rem; border-bottom: 1px solid #2a2a2a; }
+    .edit-profile-steps .wizard-step h3 { font-size: 1.35rem; margin-bottom: .5rem; }
+    .edit-profile-steps .wizard-step:last-child { border-bottom: 0; }
     .wizard-progress { padding: 1rem clamp(1rem, 4vw, 1.8rem) .7rem; background: #191919; border-bottom: 1px solid #453f31; }
     .wizard-progress-line { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: .55rem; font-weight: 700; }
     .wizard-progress-line span:last-child { color: var(--muted); }
@@ -1001,9 +1048,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       .profile-actions { display: grid; grid-template-columns: 1fr; }
       .hero-inner { min-height: auto; }
       .option-grid, .check-grid { grid-template-columns: 1fr; }
-      .onboarding-dialog { width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border: 0; border-radius: 0; }
-      .onboarding-dialog .dialog-head { padding: .85rem 1rem; }
-      .onboarding-dialog .dialog-body { height: calc(100% - 68px); }
+      .edit-profile-dialog { width: 100vw; height: 100dvh; max-height: 100dvh; margin: 0; border: 0; border-radius: 0; }
+      .edit-profile-dialog .dialog-head { padding: .85rem 1rem; }
+      .edit-profile-dialog .dialog-body { height: calc(100% - 68px); }
       .wizard-progress { padding: .8rem .85rem .65rem; }
       .wizard-stage { align-content: start; padding: 1.15rem .85rem; }
       .wizard-nav { flex-wrap: wrap; }
@@ -1076,7 +1123,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     <div class="tv-drawer-inner">
       <h2>Menu</h2>
       <button type="button" data-tv-nav="program">My Program</button>
-      <button type="button" data-tv-nav="program">Workout Plan</button>
       <button type="button" data-tv-nav="library">Exercises</button>
       <button type="button" data-tv-nav="nutrition">Nutrition Basics</button>
       <button type="button" data-tv-nav="learn">Learn the Basics</button>
@@ -1139,13 +1185,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         </div>
       </div>
       <div class="builder">
-        <div class="profile-summary" id="profile-summary" hidden>
-          <div>
-            <strong id="profile-summary-title">Personalized plan</strong>
-            <p id="profile-summary-text"></p>
-          </div>
-          <button type="button" id="edit-profile">Edit my answers</button>
-        </div>
         <div class="program-manager" aria-labelledby="program-manager-label">
           <div>
             <label id="program-manager-label" for="program-selector">Active workout program</label>
@@ -1363,6 +1402,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           <h3 id="meal-week-title">Your 7-day meal plan</h3>
           <p>A simple high-protein week that repeats. Choose a day to see its meals.</p>
           <div class="day-picker" id="meal-day-picker" role="group" aria-label="Choose a day of the meal plan"></div>
+          <p class="meal-week-total" id="meal-week-total" aria-live="polite"></p>
           <div id="meal-day-detail" aria-live="polite"></div>
         </article>
         <article class="nutrition-card" aria-labelledby="grocery-title">
@@ -1378,27 +1418,36 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <div class="guide-screen-grid">
         <article class="protein-target" aria-labelledby="protein-target-title">
           <h3 id="protein-target-title">Your daily protein starting range</h3>
-          <p id="protein-target-text" aria-live="polite">Add your body weight in the fitness questionnaire to calculate a personal range.</p>
+          <p id="protein-target-text" aria-live="polite">Add your body weight with Edit fitness profile to calculate a personal range.</p>
           <p>A practical range for healthy adults who strength train is about 0.7 to 0.9 grams per pound of body weight each day. Spread it across meals instead of trying to get it all at once.</p>
         </article>
         <article class="nutrition-card">
           <h3>Build a steady plate</h3>
           <p>At most meals, combine a protein food, a fruit or vegetable, and a carbohydrate that helps fuel training. Add a little fat for flavor and staying power.</p>
           <ul class="learn-list">
-            <li><strong>Protein:</strong> chicken, fish, eggs, Greek yogurt, cottage cheese, beans, lentils, tofu, or lean beef.</li>
+            <li><strong>Protein:</strong> eggs, chicken thighs, canned tuna, cottage cheese, beans, lentils, peanut butter, milk, or lean beef.</li>
             <li><strong>Training fuel:</strong> oats, rice, potatoes, fruit, whole-grain bread, or tortillas.</li>
             <li><strong>Produce:</strong> choose any fruit or vegetable you enjoy and can eat consistently.</li>
           </ul>
         </article>
+        <article class="nutrition-card" aria-labelledby="cheap-protein-title">
+          <h3 id="cheap-protein-title">Cheapest proteins, ranked</h3>
+          <p>Estimated cost per 30 grams of protein. Rough averages — prices vary by store and week.</p>
+          <ol class="cheap-protein-list" id="cheap-protein-list"></ol>
+        </article>
+        <article class="nutrition-card" aria-labelledby="budget-tips-title">
+          <h3 id="budget-tips-title">Budget grocery tips</h3>
+          <ul class="learn-list" id="budget-tips-list"></ul>
+        </article>
         <article class="nutrition-card">
           <h3>Easy meal ideas for toning</h3>
           <ul class="meal-list">
-            <li>Greek yogurt, berries, and oats.</li>
+            <li>Peanut-butter banana oats.</li>
             <li>Eggs, whole-grain toast, and fruit.</li>
-            <li>Chicken or tofu, rice, and mixed vegetables.</li>
-            <li>Tuna or mashed-bean wrap with salad.</li>
-            <li>Salmon or lean beef, potatoes, and a vegetable.</li>
-            <li>Cottage cheese, fruit, and a handful of nuts.</li>
+            <li>Chicken thighs, rice, and frozen vegetables.</li>
+            <li>Tuna wrap with salad greens.</li>
+            <li>Beef-and-bean tacos or turkey chili.</li>
+            <li>Cottage cheese with canned peaches.</li>
           </ul>
         </article>
         <article class="nutrition-card">
@@ -1504,6 +1553,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     </div>
   </section>
 
+  <section id="tv-home" class="tv-home" aria-labelledby="tv-home-title" hidden>
+    <div class="tv-home-inner">
+      <h1 id="tv-home-title" tabindex="-1">Lynxos Gym</h1>
+      <p class="tv-home-sync" id="tv-home-sync" role="status">Checking sync status&hellip;</p>
+      <div class="tv-home-actions">
+        <button type="button" class="tv-home-btn primary" id="tv-home-start">Start Workout</button>
+        <button type="button" class="tv-home-btn" id="tv-home-programs">Programs</button>
+        <button type="button" class="tv-home-btn" id="tv-home-syncbtn">Sync status</button>
+      </div>
+      <p class="tv-home-hint">D-pad: left opens the menu &middot; OK pauses or resumes a workout &middot; back exits the workout</p>
+    </div>
+  </section>
+
   <nav class="bottom-nav" aria-label="Main app navigation">
     <ul class="bottom-nav-list">
       <li class="bottom-nav-item">
@@ -1543,7 +1605,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
   <dialog id="tour-dialog" class="tour-dialog" aria-labelledby="tour-title" aria-describedby="tour-copy">
     <div class="dialog-head">
       <h2 id="tour-title" tabindex="-1">Quick start tour</h2>
-      <button class="close-btn" type="button" id="tour-skip-close" aria-label="Skip tour and continue to setup">×</button>
+      <button class="close-btn" type="button" id="tour-skip-close" aria-label="Skip tour">×</button>
     </div>
     <div class="tour-body">
       <p class="tour-progress" id="tour-progress" aria-live="polite">Step 1 of 6</p>
@@ -1557,21 +1619,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     </div>
   </dialog>
 
-  <dialog id="onboarding-dialog" class="onboarding-dialog" aria-labelledby="onboarding-title">
+  <dialog id="edit-profile-dialog" class="edit-profile-dialog" aria-labelledby="edit-profile-title">
     <div class="dialog-head">
-      <h2 id="onboarding-title">Lynxos Gym setup</h2>
-      <button class="close-btn" type="button" aria-label="Close fitness questions and use general defaults" id="close-onboarding">×</button>
+      <h2 id="edit-profile-title" tabindex="-1">Edit fitness profile</h2>
+      <button class="close-btn" type="button" id="close-edit-profile" aria-label="Close without saving">&times;</button>
     </div>
     <form class="dialog-body" id="profile-form" novalidate>
-      <div class="wizard-progress">
-        <div class="wizard-progress-line"><span id="wizard-progress-text">Question 1 of 12</span><span id="wizard-progress-percent">8% through</span></div>
-        <div class="progress-track" role="progressbar" aria-label="Questionnaire progress" aria-valuemin="1" aria-valuemax="12" aria-valuenow="1"><span class="progress-fill" id="wizard-progress-fill"></span></div>
-      </div>
-
-      <div class="wizard-stage" id="wizard-stage">
-        <section class="wizard-step" data-step="0">
-          <p class="step-number">START / 01</p>
-          <h3>How old are you?</h3>
+      <p class="step-help">Everything is on one screen now. Change what you need, then save.</p>
+      <div class="form-error" id="edit-profile-error" role="alert"></div>
+      <div class="edit-profile-steps">
+      <h3>How old are you?</h3>
           <p class="step-help">This helps keep your starting workout volume appropriate. Answers last only while this page is open.</p>
           <div class="question">
             <label for="profile-age">Age</label>
@@ -1579,11 +1636,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             <small id="age-help">Enter an age from 10 to 100.</small>
           </div>
           <div class="form-error" data-step-error role="alert"></div>
-        </section>
 
-        <section class="wizard-step" data-step="1" hidden>
-          <p class="step-number">PROFILE / 02</p>
-          <h3>What is your height?</h3>
+      <h3>What is your height?</h3>
           <p class="step-help">Enter feet and inches.</p>
           <div class="question">
             <span class="question-label" id="height-label">Height</span>
@@ -1593,11 +1647,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             </div>
           </div>
           <div class="form-error" data-step-error role="alert"></div>
-        </section>
 
-        <section class="wizard-step" data-step="2" hidden>
-          <p class="step-number">PROFILE / 03</p>
-          <h3>What is your body weight?</h3>
+      <h3>What is your body weight?</h3>
           <p class="step-help">Enter your current weight in pounds. This helps keep starting resistance suggestions sensible.</p>
           <div class="question">
             <label for="profile-weight">Body weight in pounds</label>
@@ -1605,11 +1656,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             <small id="weight-help">Enter a weight from 60 to 700 pounds.</small>
           </div>
           <div class="form-error" data-step-error role="alert"></div>
-        </section>
 
-        <section class="wizard-step" data-step="3" hidden>
-          <p class="step-number">PROFILE / 04</p>
-          <h3>Are you male or female?</h3>
+      <h3>Are you male or female?</h3>
           <p class="step-help">Choose the option that applies to you.</p>
           <fieldset class="question">
             <legend class="live">Sex</legend>
@@ -1619,11 +1667,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             </div>
           </fieldset>
           <div class="form-error" data-step-error role="alert"></div>
-        </section>
 
-        <section class="wizard-step" data-step="4" hidden>
-          <p class="step-number">EXPERIENCE / 05</p>
-          <h3>What is your fitness experience?</h3>
+      <h3>What is your fitness experience?</h3>
           <p class="step-help">Pick the level that best matches where you are today.</p>
           <div class="question">
             <label for="profile-level">Fitness experience</label>
@@ -1634,11 +1679,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             </select>
           </div>
           <div class="form-error" data-step-error role="alert"></div>
-        </section>
 
-        <section class="wizard-step" data-step="5" hidden>
-          <p class="step-number">ACTIVITY / 06</p>
-          <h3>How active are you now?</h3>
+      <h3>How active are you now?</h3>
           <p class="step-help">Think about a typical week, not your most active week.</p>
           <div class="question">
             <label for="profile-activity">Current activity level</label>
@@ -1649,11 +1691,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             </select>
           </div>
           <div class="form-error" data-step-error role="alert"></div>
-        </section>
 
-        <section class="wizard-step" data-step="6" hidden>
-          <p class="step-number">GOAL / 07</p>
-          <h3>What is your main fitness goal?</h3>
+      <h3>What is your main fitness goal?</h3>
           <p class="step-help">Your plan will prioritize this goal.</p>
           <div class="question">
             <label for="profile-goal">Main fitness goal</label>
@@ -1668,11 +1707,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             </select>
           </div>
           <div class="form-error" data-step-error role="alert"></div>
-        </section>
 
-        <section class="wizard-step" data-step="7" hidden>
-          <p class="step-number">SCHEDULE / 08</p>
-          <h3>How many days can you train?</h3>
+      <h3>How many days can you train?</h3>
           <p class="step-help">Choose a weekly target you can realistically repeat.</p>
           <div class="question">
             <label for="profile-days">Training days each week</label>
@@ -1684,11 +1720,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             </select>
           </div>
           <div class="form-error" data-step-error role="alert"></div>
-        </section>
 
-        <section class="wizard-step" data-step="8" hidden>
-          <p class="step-number">TIME / 09</p>
-          <h3>How long should each workout be?</h3>
+      <h3>How long should each workout be?</h3>
           <p class="step-help">A shorter session you finish is better than a longer one you skip.</p>
           <div class="question">
             <label for="profile-time">Time per workout</label>
@@ -1699,11 +1732,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             </select>
           </div>
           <div class="form-error" data-step-error role="alert"></div>
-        </section>
 
-        <section class="wizard-step" data-step="9" hidden>
-          <p class="step-number">HEALTH / 10</p>
-          <h3>Do any health limits affect exercise?</h3>
+      <h3>Do any health limits affect exercise?</h3>
           <p class="step-help">This includes pain, injuries, or anything you are unsure about.</p>
           <div class="question">
             <label for="profile-limitations">Pain, injuries, or health limits</label>
@@ -1714,22 +1744,16 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
             </select>
           </div>
           <div class="form-error" data-step-error role="alert"></div>
-        </section>
 
-        <section class="wizard-step" data-step="10" hidden>
-          <p class="step-number">DETAILS / 11</p>
-          <h3>Anything the plan should work around?</h3>
+      <h3>Anything the plan should work around?</h3>
           <p class="step-help">Optional. Share only what is useful for choosing comfortable movements.</p>
           <div class="question">
             <label for="profile-notes">Notes <span class="subtle">Optional</span></label>
             <textarea id="profile-notes" name="notes" rows="3" maxlength="180" placeholder="For example: sensitive knees, limited overhead reach, or balance concerns"></textarea>
           </div>
           <div class="form-error" data-step-error role="alert"></div>
-        </section>
 
-        <section class="wizard-step" data-step="11" hidden>
-          <p class="step-number">EQUIPMENT / 12</p>
-          <h3>What equipment do you have?</h3>
+      <h3>What equipment do you have?</h3>
           <p class="step-help">Choose everything you own. For weighted equipment, select every weight or resistance level available to you.</p>
           <fieldset class="question">
             <legend class="live">Equipment you have</legend>
@@ -1895,14 +1919,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           </fieldset>
           <p class="equipment-summary" id="equipment-summary" aria-live="polite">No equipment selected yet.</p>
           <div class="form-error" data-step-error role="alert"></div>
-        </section>
       </div>
-
       <div class="wizard-nav">
-        <button class="secondary" type="button" id="wizard-back">Back</button>
-        <button class="wizard-skip" type="button" id="use-defaults">Use a general beginner plan</button>
-        <button class="primary wizard-next" type="button" id="wizard-next">Next</button>
-        <button type="submit" hidden aria-hidden="true" tabindex="-1">Build plan</button>
+        <button class="secondary" type="button" id="cancel-edit-profile">Cancel</button>
+        <button class="primary" type="submit">Save profile</button>
       </div>
     </form>
   </dialog>
@@ -1996,6 +2016,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <p id="timer-label">Your workout begins after the 30-second get-ready countdown.</p>
         <div id="player-coach"></div>
         <p id="player-dose"></p>
+        <p id="player-upnext" aria-live="polite"></p>
       </section>
       <div class="voice-coach-bar">
         <div class="voice-coach-copy">
@@ -2240,6 +2261,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       </section>
       <section aria-labelledby="phone-sync-title" id="phone-sync-section" hidden>
         <h3 id="phone-sync-title">Sync to TV</h3>
+        <div id="tv-handoff" class="tv-handoff" hidden>
+          <h4>You opened this in a browser</h4>
+          <p>This page can't see your app's workouts. Open the <strong>Lynxos Gym</strong> app on your phone and enter this TV code:</p>
+          <p class="tv-handoff-code" id="tv-handoff-code" aria-live="polite"></p>
+          <ol class="tv-handoff-steps">
+            <li>Open the <strong>Lynxos Gym</strong> app on your phone.</li>
+            <li>Go to <strong>Profile &rarr; Sync to TV</strong>.</li>
+            <li>Type the code above, then tap <strong>Send my progress to TV</strong>.</li>
+          </ol>
+          <p id="tv-handoff-signedin-note" hidden>You are signed in with Google here, so you can also send from this page:</p>
+          <button class="secondary" type="button" id="tv-handoff-send" hidden>Send my progress to TV from here</button>
+        </div>
         <p class="profile-photo-help">On your TV, open Lynxos Gym and go to Profile and settings to see your sync code. Type it here, or scan the QR code shown on your TV.</p>
         <div class="profile-name-field">
           <label for="tv-code-input">TV code</label>
@@ -2263,7 +2296,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       </section>
       <div class="profile-actions">
         <button class="secondary share-app" type="button" aria-label="Share Lynxos Gym with another person" aria-describedby="profile-save-status">Share this app</button>
-        <button class="secondary" type="button" id="redo-questionnaire">Redo questionnaire</button>
+        <button class="secondary" type="button" id="redo-questionnaire">Edit fitness profile</button>
         <button class="secondary" type="button" id="replay-tour">Replay app tour</button>
         <button class="secondary" type="button" data-profile-close>Close profile</button>
       </div>
@@ -2876,8 +2909,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.37";
-    const LYNXOS_APP_VERSION_CODE = 53; // BUMP every release or the update banner never fires
+    const LYNXOS_APP_VERSION = "5.38";
+    const LYNXOS_APP_VERSION_CODE = 54; // BUMP every release or the update banner never fires
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
       const help = document.getElementById("health-connect-help");
@@ -3160,7 +3193,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const output = document.getElementById("plan-output");
     const libraryGrid = document.getElementById("library-grid");
     const tourDialog = document.getElementById("tour-dialog");
-    const onboardingDialog = document.getElementById("onboarding-dialog");
     const programNameDialog = document.getElementById("program-name-dialog");
     const programDialog = document.getElementById("program-dialog");
     const detailDialog = document.getElementById("detail-dialog");
@@ -3172,9 +3204,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const plateDialog = document.getElementById("plate-dialog");
     const oneRepDialog = document.getElementById("one-rep-dialog");
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const wizardSteps = [...document.querySelectorAll(".wizard-step")];
+    const editProfileDialog = document.getElementById("edit-profile-dialog");
     const bottomNavItems = [...document.querySelectorAll(".bottom-nav-link")];
-    let wizardIndex = 0;
     let navScrollFrame = null;
     let activeAppSection = null;
     let appSectionReturn = null;
@@ -3265,7 +3296,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         profileDialog.showModal();
         requestAnimationFrame(() => document.getElementById("replay-tour").focus());
       } else {
-        launchProfileWizard();
+        applyGeneralDefaults();
       }
     }
 
@@ -3318,7 +3349,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
     function updateActiveNavigationFromScroll() {
       navScrollFrame = null;
-      if (activeAppSection || onboardingDialog.open || profileDialog.open) return;
+      if (activeAppSection || (typeof editProfileDialog !== "undefined" && editProfileDialog && editProfileDialog.open) || profileDialog.open) return;
       const marker = window.innerHeight * .36;
       const sections = ["builder", "library", "nutrition", "learn", "achievements"].map(id => document.getElementById(id)).filter(section => section && !section.hidden);
       let active = sections[0];
@@ -4034,7 +4065,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const target = document.getElementById("protein-target-text");
       if (!target) return;
       if (!state.profile?.weight) {
-        target.innerHTML = '<strong>Add your body weight in the fitness questionnaire to calculate a personal range.</strong>';
+        target.innerHTML = '<strong>Add your body weight with Edit fitness profile to calculate a personal range.</strong>';
         return;
       }
       const lowGrams = Math.round(state.profile.weight * .7);
@@ -4043,55 +4074,94 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       target.innerHTML = `<strong>About ${lowGrams} to ${highGrams} grams per day</strong><br>Based on your body weight of ${escapeText(weightText)}.`;
     }
 
-    // v5.17: daily meal plans + monthly grocery list.
-    // A simple 7-day high-protein rotation that repeats weekly. Ingredients are
-    // [name, amount per day, unit, store category] so the grocery list can scale
-    // daily amounts up to about 4 weeks.
+    // v5.38: budget-friendly meal plan. Cheap staples only — no salmon, fresh
+    // berries, almonds, or Greek yogurt; chicken thighs/leg quarters instead of
+    // breast; ground beef stretched with beans. Every meal carries an estimated
+    // cost per serving (prices vary by store and week) and a cheaper-swap tip.
+    // Ingredients are [name, amount per day, unit, store category] so the
+    // grocery list can scale daily amounts up to about 4 weeks.
     const MEAL_TEMPLATES = {
-      yogurtBowl: { slot: "Breakfast", name: "Greek yogurt power bowl", desc: "Greek yogurt with oats, berries, and a drizzle of honey.", protein: 30,
-        ingredients: [["Greek yogurt",1,"cup","Dairy and eggs"],["Rolled oats",0.5,"cup","Grains and carbs"],["Mixed berries",0.5,"cup","Produce"],["Honey",1,"tbsp","Pantry"]] },
-      chickenRice: { slot: "Lunch", name: "Chicken rice bowl", desc: "Chicken breast over rice with mixed vegetables and olive oil.", protein: 40,
-        ingredients: [["Chicken breast",6,"oz","Protein"],["White rice",1,"cup","Grains and carbs"],["Mixed vegetables",1,"cup","Produce"],["Olive oil",1,"tbsp","Pantry"]] },
-      beefPotato: { slot: "Dinner", name: "Beef and potato plate", desc: "Lean ground beef with roasted potatoes and green beans.", protein: 38,
-        ingredients: [["Lean ground beef",6,"oz","Protein"],["Potato",2,"piece","Produce"],["Green beans",1,"cup","Produce"],["Olive oil",1,"tbsp","Pantry"]] },
-      cottageFruit: { slot: "Snack", name: "Cottage cheese and fruit", desc: "Cottage cheese with pineapple chunks.", protein: 24,
-        ingredients: [["Cottage cheese",1,"cup","Dairy and eggs"],["Pineapple",0.5,"cup","Produce"]] },
-      eggScramble: { slot: "Breakfast", name: "Egg scramble", desc: "Scrambled eggs with spinach and whole-grain toast.", protein: 24,
-        ingredients: [["Eggs",3,"piece","Dairy and eggs"],["Spinach",1,"cup","Produce"],["Whole-grain bread",2,"slice","Grains and carbs"],["Butter",1,"tbsp","Dairy and eggs"]] },
-      tunaWrap: { slot: "Lunch", name: "Tuna wrap", desc: "Tuna with Greek yogurt in a whole-wheat wrap and salad greens.", protein: 38,
-        ingredients: [["Canned tuna",1,"can","Protein"],["Whole-wheat wrap",1,"piece","Grains and carbs"],["Salad greens",1,"cup","Produce"],["Greek yogurt",0.25,"cup","Dairy and eggs"]] },
-      salmonSweet: { slot: "Dinner", name: "Salmon and sweet potato", desc: "Baked salmon with sweet potato and broccoli.", protein: 36,
-        ingredients: [["Salmon fillet",6,"oz","Protein"],["Sweet potato",1,"piece","Produce"],["Broccoli",1,"cup","Produce"],["Olive oil",1,"tbsp","Pantry"]] },
-      proteinShake: { slot: "Snack", name: "Protein shake", desc: "Whey protein blended with milk and banana.", protein: 30,
-        ingredients: [["Whey protein",1,"scoop","Pantry"],["Milk",1,"cup","Dairy and eggs"],["Banana",1,"piece","Produce"]] },
-      proteinOats: { slot: "Breakfast", name: "Protein oatmeal", desc: "Oats cooked with milk, whey, peanut butter, and banana.", protein: 32,
-        ingredients: [["Rolled oats",0.75,"cup","Grains and carbs"],["Milk",1,"cup","Dairy and eggs"],["Whey protein",0.5,"scoop","Pantry"],["Peanut butter",1,"tbsp","Pantry"],["Banana",1,"piece","Produce"]] },
-      chickenQuesadilla: { slot: "Lunch", name: "Chicken quesadilla", desc: "Chicken and cheese in whole-wheat tortillas with salsa.", protein: 40,
-        ingredients: [["Chicken breast",5,"oz","Protein"],["Shredded cheese",0.5,"cup","Dairy and eggs"],["Whole-wheat tortilla",2,"piece","Grains and carbs"],["Salsa",0.25,"cup","Pantry"]] },
-      turkeyChili: { slot: "Dinner", name: "Turkey chili", desc: "Ground turkey chili with beans, tomatoes, and onion.", protein: 38,
-        ingredients: [["Ground turkey",6,"oz","Protein"],["Kidney beans",1,"cup","Pantry"],["Diced tomatoes",1,"can","Pantry"],["Onion",0.5,"piece","Produce"]] },
-      yogurtAlmonds: { slot: "Snack", name: "Yogurt and almonds", desc: "Greek yogurt with a handful of almonds.", protein: 20,
-        ingredients: [["Greek yogurt",0.75,"cup","Dairy and eggs"],["Almonds",1,"oz","Pantry"]] },
-      eggFriedRice: { slot: "Lunch", name: "Egg fried rice", desc: "Scrambled eggs with rice, peas, carrots, and soy sauce.", protein: 26,
+      pbBananaOats: { slot: "Breakfast", name: "Peanut-butter banana oats", desc: "Oats cooked with milk, stirred with peanut butter and topped with banana.", protein: 20, cost: 0.85,
+        swap: "Buy oats in the big canister and store-brand peanut butter.",
+        ingredients: [["Rolled oats",0.75,"cup","Grains and carbs"],["Milk",1,"cup","Dairy and eggs"],["Peanut butter",2,"tbsp","Pantry"],["Banana",1,"piece","Produce"]] },
+      eggScramble: { slot: "Breakfast", name: "Egg scramble", desc: "Scrambled eggs with toast and a banana.", protein: 24, cost: 1.10,
+        swap: "Eggs in the big pack are the cheapest protein in this meal.",
+        ingredients: [["Eggs",3,"piece","Dairy and eggs"],["Whole-grain bread",2,"slice","Grains and carbs"],["Banana",1,"piece","Produce"],["Butter",1,"tbsp","Dairy and eggs"]] },
+      proteinPancakes: { slot: "Breakfast", name: "Protein pancakes", desc: "Oat, egg, and banana pancakes with milk.", protein: 22, cost: 1.00,
+        swap: "An extra egg instead of protein powder keeps this cheap.",
+        ingredients: [["Rolled oats",0.5,"cup","Grains and carbs"],["Eggs",2,"piece","Dairy and eggs"],["Banana",1,"piece","Produce"],["Milk",0.5,"cup","Dairy and eggs"]] },
+      breakfastBurrito: { slot: "Breakfast", name: "Breakfast burrito", desc: "Scrambled eggs and pinto beans in a flour tortilla with cheese.", protein: 24, cost: 1.25,
+        swap: "Use more beans and fewer eggs to drop the price further.",
+        ingredients: [["Eggs",2,"piece","Dairy and eggs"],["Pinto beans",0.75,"cup","Pantry"],["Flour tortilla",1,"piece","Grains and carbs"],["Shredded cheese",0.25,"cup","Dairy and eggs"]] },
+      tunaWrap: { slot: "Lunch", name: "Tuna wrap", desc: "Canned tuna with mustard in a flour tortilla and salad greens.", protein: 32, cost: 1.50,
+        swap: "Store-brand tuna in water; mustard instead of mayo.",
+        ingredients: [["Canned tuna",1,"can","Protein"],["Flour tortilla",1,"piece","Grains and carbs"],["Salad greens",1,"cup","Produce"]] },
+      chickenThighRice: { slot: "Lunch", name: "Chicken-thigh rice bowl", desc: "Baked chicken thighs over rice with frozen mixed vegetables.", protein: 38, cost: 1.75,
+        swap: "Leg quarters are even cheaper than thighs when on sale.",
+        ingredients: [["Chicken thighs",6,"oz","Protein"],["White rice",1,"cup","Grains and carbs"],["Frozen mixed vegetables",1,"cup","Produce"]] },
+      beanCheeseQuesadilla: { slot: "Lunch", name: "Bean-and-cheese quesadilla", desc: "Pinto beans and cheese in a flour tortilla with salsa.", protein: 22, cost: 1.10,
+        swap: "Dry beans cooked at home beat canned beans on price.",
+        ingredients: [["Pinto beans",1,"cup","Pantry"],["Shredded cheese",0.5,"cup","Dairy and eggs"],["Flour tortilla",1,"piece","Grains and carbs"],["Salsa",0.25,"cup","Pantry"]] },
+      eggFriedRice: { slot: "Lunch", name: "Egg fried rice", desc: "Scrambled eggs with rice, frozen peas and carrots, and soy sauce.", protein: 26, cost: 1.00,
+        swap: "Use leftover rice — and frozen veg, not fresh.",
         ingredients: [["Eggs",3,"piece","Dairy and eggs"],["White rice",1,"cup","Grains and carbs"],["Frozen peas and carrots",1,"cup","Produce"],["Soy sauce",1,"tbsp","Pantry"]] },
-      chickenStirfry: { slot: "Dinner", name: "Chicken stir-fry", desc: "Chicken breast with stir-fry vegetables over rice.", protein: 38,
-        ingredients: [["Chicken breast",6,"oz","Protein"],["Stir-fry vegetables",2,"cup","Produce"],["White rice",1,"cup","Grains and carbs"],["Soy sauce",1,"tbsp","Pantry"]] },
-      beefTacos: { slot: "Dinner", name: "Beef tacos", desc: "Lean ground beef tacos with lettuce, cheese, and salsa.", protein: 36,
-        ingredients: [["Lean ground beef",5,"oz","Protein"],["Corn tortilla",3,"piece","Grains and carbs"],["Lettuce",1,"cup","Produce"],["Shredded cheese",0.25,"cup","Dairy and eggs"],["Salsa",0.25,"cup","Pantry"]] },
-      proteinPancakes: { slot: "Breakfast", name: "Protein pancakes", desc: "Oat, egg, and whey pancakes with banana.", protein: 30,
-        ingredients: [["Rolled oats",0.5,"cup","Grains and carbs"],["Eggs",2,"piece","Dairy and eggs"],["Whey protein",0.5,"scoop","Pantry"],["Banana",1,"piece","Produce"]] },
-      chickenPasta: { slot: "Dinner", name: "Chicken pasta", desc: "Chicken breast with pasta, marinara, and parmesan.", protein: 40,
-        ingredients: [["Chicken breast",6,"oz","Protein"],["Pasta",4,"oz","Grains and carbs"],["Marinara sauce",0.5,"cup","Pantry"],["Parmesan",2,"tbsp","Dairy and eggs"]] }
+      turkeyChili: { slot: "Dinner", name: "Turkey chili", desc: "Ground turkey chili with kidney beans, tomatoes, and onion.", protein: 36, cost: 2.00,
+        swap: "Stretch it with an extra can of beans.",
+        ingredients: [["Ground turkey",5,"oz","Protein"],["Kidney beans",1.5,"cup","Pantry"],["Diced tomatoes",1,"can","Pantry"],["Onion",0.5,"piece","Produce"]] },
+      chickenThighStirfry: { slot: "Dinner", name: "Chicken-thigh stir-fry", desc: "Chicken thighs with frozen stir-fry vegetables over rice.", protein: 36, cost: 1.90,
+        swap: "Frozen stir-fry blend instead of fresh vegetables.",
+        ingredients: [["Chicken thighs",6,"oz","Protein"],["Frozen stir-fry vegetables",2,"cup","Produce"],["White rice",1,"cup","Grains and carbs"],["Soy sauce",1,"tbsp","Pantry"]] },
+      beefBeanTacos: { slot: "Dinner", name: "Beef-and-bean tacos", desc: "Ground beef stretched with pinto beans in corn tortillas with cheese and salsa.", protein: 34, cost: 1.75,
+        swap: "Half beef, half beans — you won't miss the difference.",
+        ingredients: [["Lean ground beef",3,"oz","Protein"],["Pinto beans",1,"cup","Pantry"],["Corn tortilla",3,"piece","Grains and carbs"],["Shredded cheese",0.25,"cup","Dairy and eggs"],["Salsa",0.25,"cup","Pantry"]] },
+      chickenThighPasta: { slot: "Dinner", name: "Chicken pasta", desc: "Chicken thighs with pasta, marinara, and parmesan.", protein: 36, cost: 1.90,
+        swap: "Use leg quarters, or rotisserie chicken when it's on sale.",
+        ingredients: [["Chicken thighs",5,"oz","Protein"],["Pasta",4,"oz","Grains and carbs"],["Marinara sauce",0.5,"cup","Pantry"],["Parmesan",2,"tbsp","Dairy and eggs"]] },
+      redBeansRice: { slot: "Dinner", name: "Red beans and rice", desc: "Slow-cooked red beans over rice with onion and a little cheese.", protein: 20, cost: 0.90,
+        swap: "Dry red beans plus bulk rice is the cheapest dinner here.",
+        ingredients: [["Red beans",1.5,"cup","Pantry"],["White rice",1,"cup","Grains and carbs"],["Onion",0.5,"piece","Produce"],["Shredded cheese",0.25,"cup","Dairy and eggs"]] },
+      cottagePeach: { slot: "Snack", name: "Cottage cheese with canned peaches", desc: "Cottage cheese topped with canned peach slices.", protein: 20, cost: 1.00,
+        swap: "Store-brand cottage cheese; canned peaches in juice.",
+        ingredients: [["Cottage cheese",1,"cup","Dairy and eggs"],["Canned peaches",0.5,"cup","Pantry"]] },
+      pbToastMilk: { slot: "Snack", name: "Peanut-butter toast with milk", desc: "Peanut butter on toast with a glass of milk.", protein: 18, cost: 0.85,
+        swap: "Store-brand bread and peanut butter.",
+        ingredients: [["Peanut butter",2,"tbsp","Pantry"],["Whole-grain bread",2,"slice","Grains and carbs"],["Milk",1,"cup","Dairy and eggs"]] },
+      hardBoiledEggs: { slot: "Snack", name: "Hard-boiled eggs", desc: "Three hard-boiled eggs with salt.", protein: 18, cost: 0.60,
+        swap: "Already the cheapest snack — batch-cook a dozen at once.",
+        ingredients: [["Eggs",3,"piece","Dairy and eggs"]] },
+      pbMilkShake: { slot: "Snack", name: "Milk-and-peanut-butter shake", desc: "Milk blended with peanut butter and banana.", protein: 20, cost: 1.00,
+        swap: "Skip the banana when fruit prices spike.",
+        ingredients: [["Milk",1,"cup","Dairy and eggs"],["Peanut butter",2,"tbsp","Pantry"],["Banana",1,"piece","Produce"]] }
     };
     const MEAL_PLAN_DAYS = [
-      { day: "Monday", meals: ["yogurtBowl", "chickenRice", "beefPotato", "cottageFruit"] },
-      { day: "Tuesday", meals: ["eggScramble", "tunaWrap", "salmonSweet", "proteinShake"] },
-      { day: "Wednesday", meals: ["proteinOats", "chickenQuesadilla", "turkeyChili", "yogurtAlmonds"] },
-      { day: "Thursday", meals: ["yogurtBowl", "eggFriedRice", "chickenStirfry", "cottageFruit"] },
-      { day: "Friday", meals: ["eggScramble", "chickenRice", "beefTacos", "proteinShake"] },
-      { day: "Saturday", meals: ["proteinPancakes", "tunaWrap", "chickenPasta", "yogurtAlmonds"] },
-      { day: "Sunday", meals: ["proteinOats", "turkeyChili", "salmonSweet", "cottageFruit"] }
+      { day: "Monday", meals: ["pbBananaOats", "tunaWrap", "turkeyChili", "cottagePeach"] },
+      { day: "Tuesday", meals: ["eggScramble", "chickenThighRice", "beefBeanTacos", "pbToastMilk"] },
+      { day: "Wednesday", meals: ["proteinPancakes", "beanCheeseQuesadilla", "chickenThighStirfry", "hardBoiledEggs"] },
+      { day: "Thursday", meals: ["breakfastBurrito", "eggFriedRice", "chickenThighPasta", "pbMilkShake"] },
+      { day: "Friday", meals: ["pbBananaOats", "chickenThighRice", "turkeyChili", "cottagePeach"] },
+      { day: "Saturday", meals: ["eggScramble", "tunaWrap", "redBeansRice", "pbToastMilk"] },
+      { day: "Sunday", meals: ["proteinPancakes", "beanCheeseQuesadilla", "beefBeanTacos", "hardBoiledEggs"] }
     ];
+    // v5.38: cheapest proteins ranked by estimated cost per 30 g of protein.
+    // Rough US average estimates — prices vary by store and week.
+    const CHEAP_PROTEINS = [
+      { name: "Dry beans", costPer30g: 0.40, note: "Cheapest protein there is. Cook a big pot once a week." },
+      { name: "Peanut butter", costPer30g: 0.55, note: "Store brand, big jar." },
+      { name: "Eggs", costPer30g: 1.00, note: "Buy the big pack." },
+      { name: "Milk", costPer30g: 1.10, note: "A gallon beats a half-gallon per cup." },
+      { name: "Canned tuna", costPer30g: 1.50, note: "In water, store brand." },
+      { name: "Chicken thighs", costPer30g: 1.60, note: "Leg quarters go even cheaper on sale." },
+      { name: "Cottage cheese", costPer30g: 1.75, note: "Store brand tub." },
+      { name: "Ground turkey", costPer30g: 2.20, note: "Stretch with beans in chili and tacos." }
+    ];
+    const BUDGET_GROCERY_TIPS = [
+      "Buy store brands — same food, smaller price.",
+      "Frozen vegetables cost less than fresh and don't spoil.",
+      "Rotisserie chicken on sale beats raw chicken per meal.",
+      "Buy rice and dry beans in bulk bags.",
+      "Shop the sales flyer and build the week around what's cheap."
+    ];
+
     const GROCERY_CATEGORIES = ["Protein", "Dairy and eggs", "Produce", "Grains and carbs", "Pantry"];
     const GROCERY_WEEKS = 4;
     let mealPlanDay = (new Date().getDay() + 6) % 7; // Monday-first index
@@ -4102,6 +4172,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         return sum + (MEAL_TEMPLATES[key].protein || 0);
       }, 0);
     }
+    function mealDayCost(dayIndex) {
+      return MEAL_PLAN_DAYS[dayIndex].meals.reduce(function (sum, key) {
+        return sum + (MEAL_TEMPLATES[key].cost || 0);
+      }, 0);
+    }
+    function mealWeekCost() {
+      return MEAL_PLAN_DAYS.reduce(function (sum, d, i) { return sum + mealDayCost(i); }, 0);
+    }
 
     function mealSlotHTML(meal) {
       const ing = meal.ingredients.map(function (parts) {
@@ -4110,6 +4188,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       return "<div class=\"meal-slot\"><h4>" + escapeText(meal.slot) + ": " + escapeText(meal.name) + "</h4>" +
         "<p>" + escapeText(meal.desc) + "</p>" +
         "<p class=\"meal-protein\">About " + meal.protein + " g protein</p>" +
+        "<p class=\"meal-cost\">Estimated cost: about $" + meal.cost.toFixed(2) + "</p>" +
+        "<p class=\"meal-swap\"><strong>Cheaper swap:</strong> " + escapeText(meal.swap) + "</p>" +
         "<p class=\"meal-ingredients\"><strong>Ingredients:</strong> " + escapeText(ing) + ".</p></div>";
     }
 
@@ -4130,7 +4210,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (btn) btn.addEventListener("click", function () { openProgram(); });
       }
       const day = MEAL_PLAN_DAYS[mealPlanDay];
-      mealsWrap.innerHTML = "<h4>Today&apos;s meals (" + day.day + ") — about " + mealDayProtein(mealPlanDay) + " g protein</h4>" +
+      mealsWrap.innerHTML = "<h4>Today&apos;s meals (" + day.day + ") — about " + mealDayProtein(mealPlanDay) + " g protein · about $" + mealDayCost(mealPlanDay).toFixed(2) + "</h4>" +
         day.meals.map(function (key) { return mealSlotHTML(MEAL_TEMPLATES[key]); }).join("");
     }
 
@@ -4158,7 +4238,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const detail = document.getElementById("meal-day-detail");
       if (!detail) return;
       const day = MEAL_PLAN_DAYS[i];
-      detail.innerHTML = "<h4>" + day.day + " — about " + mealDayProtein(i) + " g protein</h4>" +
+      detail.innerHTML = "<h4>" + day.day + " — about " + mealDayProtein(i) + " g protein · about $" + mealDayCost(i).toFixed(2) + "</h4>" +
         day.meals.map(function (key) { return mealSlotHTML(MEAL_TEMPLATES[key]); }).join("");
     }
 
@@ -4250,28 +4330,34 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       });
     }
 
+    function renderCheapProteins() {
+      const list = document.getElementById("cheap-protein-list");
+      if (!list) return;
+      list.innerHTML = CHEAP_PROTEINS.map(function (p) {
+        return "<li><strong>" + escapeText(p.name) + "</strong> — about $" + p.costPer30g.toFixed(2) +
+          " per 30 g protein. " + escapeText(p.note) + "</li>";
+      }).join("");
+      const tips = document.getElementById("budget-tips-list");
+      if (tips) tips.innerHTML = BUDGET_GROCERY_TIPS.map(function (t) { return "<li>" + escapeText(t) + "</li>"; }).join("");
+    }
     function renderNutritionPlans() {
+      renderCheapProteins();
       renderTodayFuel();
       renderMealDayPicker();
       renderMealDay(mealPlanDay);
+      renderMealWeekTotal();
       bindGroceryButtons();
       renderGroceryList();
     }
+    function renderMealWeekTotal() {
+      const el = document.getElementById("meal-week-total");
+      if (!el) return;
+      el.innerHTML = "<strong>Whole week:</strong> about $" + mealWeekCost().toFixed(2) +
+        " for all 7 days. Prices vary by store and week.";
+    }
 
+    // v5.38: the redundant builder profile card is gone; the Profile tab owns this.
     function renderProfileSummary() {
-      const box = document.getElementById("profile-summary");
-      box.hidden = false;
-      if (!state.profile) {
-        document.getElementById("profile-summary-title").textContent = "General beginner plan";
-        document.getElementById("profile-summary-text").textContent = "25 minutes · full body · dumbbells, kettlebell, ab roller, and bands";
-        renderProteinTarget();
-        return;
-      }
-      const p = state.profile;
-      document.getElementById("profile-summary-title").textContent = state.profileName
-        ? `${state.profileName}'s plan for ${goalNames[p.goal]}`
-        : `Plan for ${goalNames[p.goal]}`;
-      document.getElementById("profile-summary-text").textContent = `${p.days} days a week · ${p.time} minutes · ${p.level.toLowerCase()} · ${p.sex.toLowerCase()} · age ${p.age} · ${profileHeightText(p)} · ${profileWeightText(p)}`;
       renderProteinTarget();
     }
 
@@ -4381,6 +4467,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       tabSettings.tabIndex = isProfile ? -1 : 0;
       panelProfile.hidden = !isProfile;
       panelSettings.hidden = isProfile;
+      // v5.38: always start at the top of the newly shown tab so Settings
+      // never appears to jump down to the App info section at the bottom.
+      try {
+        const body = document.querySelector("#profile-dialog .dialog-body");
+        if (body) body.scrollTop = 0;
+      } catch (error) {}
     }
     function openProfile(returnContext = null) {
       renderProfileScreen();
@@ -4426,92 +4518,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       renderProfileScreen();
     }
 
-    function setWizardStep(index, focusStep = true) {
-      wizardIndex = Math.max(0, Math.min(index, wizardSteps.length - 1));
-      wizardSteps.forEach((step, i) => { step.hidden = i !== wizardIndex; });
-      const current = wizardIndex + 1;
-      const percent = Math.round((current / wizardSteps.length) * 100);
-      document.getElementById("wizard-progress-text").textContent = `Question ${current} of ${wizardSteps.length}`;
-      document.getElementById("wizard-progress-percent").textContent = `${percent}% through`;
-      document.getElementById("wizard-progress-fill").style.width = `${percent}%`;
-      const track = document.querySelector(".progress-track");
-      track.setAttribute("aria-valuemax", String(wizardSteps.length));
-      track.setAttribute("aria-valuenow", String(current));
-      const back = document.getElementById("wizard-back");
-      back.hidden = wizardIndex === 0;
-      const next = document.getElementById("wizard-next");
-      next.textContent = wizardIndex === wizardSteps.length - 1 ? "Build my plan" : "Next";
-      document.getElementById("wizard-stage").scrollTop = 0;
-      if (focusStep) {
-        const heading = wizardSteps[wizardIndex].querySelector("h3");
-        heading.setAttribute("tabindex", "-1");
-        heading.focus();
-      }
-    }
 
-    function validateWizardStep(index) {
-      const form = document.getElementById("profile-form");
-      const step = wizardSteps[index];
-      const error = step.querySelector("[data-step-error]");
-      error.textContent = "";
-      if (index === 0) {
-        const age = Number(form.age.value);
-        if (!Number.isFinite(age) || age < 10 || age > 100) {
-          error.textContent = "Enter an age from 10 to 100.";
-          form.age.focus();
-          return false;
-        }
-      }
-      if (index === 1) {
-        const feet = Number(form.feet.value);
-        const inches = Number(form.inches.value);
-        if (!Number.isFinite(feet) || feet < 3 || feet > 8 || !Number.isFinite(inches) || inches < 0 || inches > 11) {
-          error.textContent = "Enter height as 3 to 8 feet and 0 to 11 inches.";
-          form.feet.focus();
-          return false;
-        }
-      }
-      if (index === 2) {
-        const weight = Number(form.weight.value);
-        if (!Number.isFinite(weight) || weight < 60 || weight > 700) {
-          error.textContent = "Enter a body weight from 60 to 700 pounds.";
-          form.weight.focus();
-          return false;
-        }
-      }
-      if (index === 3 && !form.querySelector('input[name="sex"]:checked')) {
-        error.textContent = "Choose Male or Female to continue.";
-        form.querySelector('input[name="sex"]').focus();
-        return false;
-      }
-      if (index === wizardSteps.length - 1) {
-        const selected = [...form.querySelectorAll('input[name="equipment"]:checked')].map(input => input.value);
-        if (!selected.length) {
-          error.textContent = "Choose at least one piece of equipment.";
-          form.querySelector('input[name="equipment"]').focus();
-          return false;
-        }
-        const missingDetail = selected.find(item => equipmentWithDetails.has(item) && !form.querySelector(`input[name="detail-${item}"]:checked`));
-        if (missingDetail) {
-          error.textContent = `Select at least one ${missingDetail === "Bands" ? "resistance level" : "weight"} for ${equipmentNames[missingDetail]}.`;
-          form.querySelector(`input[name="detail-${missingDetail}"]`).focus();
-          return false;
-        }
-      }
-      return true;
-    }
 
-    function launchProfileWizard() {
-      setWizardStep(0, false);
-      updateEquipmentQuestion();
-      setActiveNavigation("profile");
-      onboardingDialog.showModal();
-      requestAnimationFrame(() => {
-        const heading = wizardSteps[0].querySelector("h3");
-        heading.setAttribute("tabindex", "-1");
-        heading.focus();
-      });
-    }
 
     function applyGeneralDefaults() {
       state.profile = null;
@@ -4521,13 +4529,46 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       state.equipmentDetails = {};
       syncBuilderControls();
       renderProfileSummary();
-      onboardingDialog.close();
       buildWorkout(true);
     }
 
-    function closeOnboarding() {
-      if (state.profile) onboardingDialog.close();
-      else applyGeneralDefaults();
+
+    // v5.38: the 12-step setup wizard is gone. One single-screen editor instead.
+    function prefillEditProfile() {
+      const form = document.getElementById("profile-form");
+      const p = state.profile || {};
+      const setVal = (name, value) => {
+        const field = form.elements[name];
+        if (field && value !== undefined && value !== null && value !== "") field.value = value;
+      };
+      setVal("age", p.age); setVal("feet", p.feet); setVal("inches", p.inches); setVal("weight", p.weight);
+      setVal("level", p.level || state.level); setVal("activity", p.activity);
+      setVal("goal", p.goal); setVal("days", p.days); setVal("time", p.time || state.duration);
+      setVal("limitations", p.limitations); setVal("notes", p.notes);
+      if (p.sex) {
+        const radio = form.querySelector('input[name="sex"][value="' + p.sex + '"]');
+        if (radio) radio.checked = true;
+      }
+      const equipment = p.equipment && p.equipment.length ? p.equipment : [...state.equipment];
+      form.querySelectorAll('input[name="equipment"]').forEach(input => {
+        input.checked = equipment.includes(input.value);
+      });
+      const details = p.equipmentDetails || state.equipmentDetails || {};
+      form.querySelectorAll('input[name^="detail-"]').forEach(input => {
+        const key = input.name.replace("detail-", "");
+        input.checked = (details[key] || []).includes(input.value);
+      });
+      document.getElementById("edit-profile-error").textContent = "";
+      updateEquipmentQuestion();
+    }
+    function openEditProfile() {
+      prefillEditProfile();
+      setActiveNavigation("profile");
+      editProfileDialog.showModal();
+      requestAnimationFrame(() => document.getElementById("edit-profile-title").focus());
+    }
+    function closeEditProfile() {
+      if (editProfileDialog.open) editProfileDialog.close();
     }
 
     function applyProfile(event) {
@@ -4540,29 +4581,27 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const sex = form.querySelector('input[name="sex"]:checked')?.value || "";
       const equipment = [...form.querySelectorAll('input[name="equipment"]:checked')].map(input => input.value);
       const equipmentDetails = collectEquipmentDetails(form, equipment);
-      const error = wizardSteps[wizardSteps.length - 1].querySelector("[data-step-error]");
+      const error = document.getElementById("edit-profile-error");
+      // v5.38: single-screen profile editor — one error box, focus the bad field.
+      const fail = (message, field) => {
+        error.textContent = message;
+        error.scrollIntoView({ block: "center" });
+        if (field) field.focus();
+      };
       if (!Number.isFinite(age) || age < 10 || age > 100) {
-        setWizardStep(0);
-        wizardSteps[0].querySelector("[data-step-error]").textContent = "Enter an age from 10 to 100.";
-        form.age.focus();
+        fail("Enter an age from 10 to 100.", form.age);
         return;
       }
       if (!Number.isFinite(feet) || feet < 3 || feet > 8 || !Number.isFinite(inches) || inches < 0 || inches > 11) {
-        setWizardStep(1);
-        wizardSteps[1].querySelector("[data-step-error]").textContent = "Enter height as 3 to 8 feet and 0 to 11 inches.";
-        form.feet.focus();
+        fail("Enter height as 3 to 8 feet and 0 to 11 inches.", form.feet);
         return;
       }
       if (!Number.isFinite(weight) || weight < 60 || weight > 700) {
-        setWizardStep(2);
-        wizardSteps[2].querySelector("[data-step-error]").textContent = "Enter a body weight from 60 to 700 pounds.";
-        form.weight.focus();
+        fail("Enter a body weight from 60 to 700 pounds.", form.weight);
         return;
       }
       if (sex === "") {
-        setWizardStep(3);
-        wizardSteps[3].querySelector("[data-step-error]").textContent = "Choose Male or Female to continue.";
-        form.querySelector('input[name="sex"]').focus();
+        fail("Choose Male or Female to continue.", form.querySelector('input[name="sex"]'));
         return;
       }
       if (!equipment.length) {
@@ -4595,7 +4634,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       state.equipmentDetails = equipmentDetails;
       syncBuilderControls();
       renderProfileSummary();
-      onboardingDialog.close();
+      editProfileDialog.close();
       buildWorkout(true);
       document.getElementById("builder-title").focus?.();
     }
@@ -4620,8 +4659,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const active = button.getAttribute("aria-pressed") === "true";
       const item = button.dataset.value;
       if (!active && equipmentWithDetails.has(item) && !(state.equipmentDetails[item] || []).length) {
-        launchProfileWizard();
-        requestAnimationFrame(() => setWizardStep(wizardSteps.length - 1));
+        openEditProfile();
         return;
       }
       if (!active && item === "No equipment") {
@@ -6037,6 +6075,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         : `${ex.dose}. ${ex.steps.join(" ")} ${ex.cue} ${guidance.breathing}`;
       document.getElementById("session-swap").hidden = stage !== "workout";
       document.getElementById("workout-feedback").hidden = true;
+      // v5.38: "Up next" preview for the TV lean-back player.
+      const upnext = document.getElementById("player-upnext");
+      if (upnext) {
+        const nextItem = state.sessionQueue[state.sessionQueueIndex + 1];
+        if (nextItem && nextItem.exercise) {
+          upnext.textContent = "Up next: " + nextItem.exercise.name;
+          upnext.hidden = false;
+        } else {
+          upnext.hidden = true;
+          upnext.textContent = "";
+        }
+      }
     }
 
     function beginQueueItem() {
@@ -6822,15 +6872,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
       if (event.target.matches('input[name="equipment"], input[name^="detail-"]')) updateEquipmentQuestion();
     });
-    document.getElementById("wizard-next").addEventListener("click", () => {
-      if (!validateWizardStep(wizardIndex)) return;
-      if (wizardIndex === wizardSteps.length - 1) document.getElementById("profile-form").requestSubmit();
-      else setWizardStep(wizardIndex + 1);
-    });
-    document.getElementById("wizard-back").addEventListener("click", () => {
-      if (wizardIndex > 0) setWizardStep(wizardIndex - 1);
-    });
-    document.getElementById("use-defaults").addEventListener("click", applyGeneralDefaults);
+    document.getElementById("cancel-edit-profile").addEventListener("click", closeEditProfile);
+    document.getElementById("close-edit-profile").addEventListener("click", closeEditProfile);
     document.getElementById("tour-next").addEventListener("click", () => {
       if (state.tourIndex === tourSteps.length - 1) finishTour();
       else { state.tourIndex += 1; renderTourStep(); }
@@ -6841,8 +6884,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     document.getElementById("tour-skip").addEventListener("click", finishTour);
     document.getElementById("tour-skip-close").addEventListener("click", finishTour);
     tourDialog.addEventListener("cancel", event => { event.preventDefault(); finishTour(); });
-    document.getElementById("close-onboarding").addEventListener("click", closeOnboarding);
-    document.getElementById("edit-profile").addEventListener("click", launchProfileWizard);
     document.getElementById("program-selector").addEventListener("change", event => activateProgram(event.target.value));
     document.getElementById("create-program").addEventListener("click", () => openProgramNameDialog("create"));
     document.getElementById("current-plan-view").addEventListener("click", openProgram);
@@ -6919,7 +6960,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     document.querySelectorAll("[data-units]").forEach(button => button.addEventListener("click", () => setUnits(button.dataset.units)));
     document.getElementById("redo-questionnaire").addEventListener("click", () => {
       profileDialog.close();
-      launchProfileWizard();
+      openEditProfile();
     });
     document.getElementById("replay-tour").addEventListener("click", () => {
       profileDialog.close();
@@ -6968,8 +7009,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }));
     window.addEventListener("scroll", queueNavigationUpdate, { passive: true });
     window.addEventListener("resize", queueNavigationUpdate);
-    onboardingDialog.addEventListener("close", queueNavigationUpdate);
-    onboardingDialog.addEventListener("cancel", event => { event.preventDefault(); closeOnboarding(); });
+    editProfileDialog.addEventListener("close", queueNavigationUpdate);
+    editProfileDialog.addEventListener("cancel", event => { event.preventDefault(); closeEditProfile(); });
     document.getElementById("generate").addEventListener("click", () => buildWorkout(true));
     document.getElementById("program-prev").addEventListener("click", () => {
       if (state.programPage > 0) { state.programPage -= 1; renderProgramPage(); }
@@ -7020,7 +7061,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const top = openDialogs[openDialogs.length - 1];
         if (top) {
           if (top.id === "tour-dialog") { markTourSeen(); try { top.close(); } catch (tourCloseError) {} return; }
-          if (top.id === "onboarding-dialog") { closeOnboarding(); return; }
+          if (top.id === "edit-profile-dialog") { closeEditProfile(); return; }
           if (top.id === "detail-dialog") { returnFromDetail(); return; }
           let cancelEvent;
           try { cancelEvent = new Event("cancel", { cancelable: true }); }
@@ -7075,10 +7116,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         signin.hidden = true;
         signout.hidden = false;
         status.textContent = "Signed in as " + cloudUserEmail + ". Your progress saves to the cloud.";
+        const handoffCard = document.getElementById("tv-handoff");
+        if (handoffCard && !handoffCard.hidden) updateTvHandoff(tvHandoffCode);
+        renderTvHomeSync();
       } else {
         signin.hidden = false;
         signout.hidden = true;
         status.textContent = "Not signed in. Sign in to save your progress to the cloud and sync your profile.";
+        renderTvHomeSync();
       }
     }
 
@@ -7525,6 +7570,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (w) w.hidden = true;
       const closeBtn = document.getElementById("tv-welcome-close");
       if (closeBtn) closeBtn.hidden = false;
+      const home = document.getElementById("tv-home");
+      if (home) {
+        home.hidden = false;
+        renderTvHomeSync();
+        requestAnimationFrame(() => document.getElementById("tv-home-title")?.focus());
+      }
     }
     function showTvWelcome() {
       const w = document.getElementById("tv-welcome");
@@ -7543,6 +7594,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       tvNewCode();
       showTvWelcome();
     }
+    // v5.38: lean-back TV home sync status line.
+    function renderTvHomeSync() {
+      const el = document.getElementById("tv-home-sync");
+      if (!el || !isTvDevice()) return;
+      el.textContent = cloudUserEmail
+        ? "Signed in as " + cloudUserEmail + ". Progress syncs from your phone."
+        : "Not signed in. Choose Sync status below to pair with your phone.";
+    }
     function initTvWelcome() {
       const closeBtn = document.getElementById("tv-welcome-close");
       if (closeBtn) closeBtn.addEventListener("click", () => {
@@ -7551,6 +7610,34 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       });
       if (!isTvDevice()) return;
       document.body.classList.add("tv");
+      // v5.38: hide phone-only items on TV — the phone "Sync to TV" jump, the
+      // Lynxos Health history copy, and Health Connect (dead on TV hardware).
+      const phoneSyncJump = document.querySelector('section[aria-labelledby="phone-sync-jump-title"]');
+      if (phoneSyncJump) phoneSyncJump.hidden = true;
+      const healthCopy = document.getElementById("copy-history-export");
+      if (healthCopy) healthCopy.hidden = true;
+      const hcToggle = document.getElementById("health-connect-toggle");
+      const hcRow = hcToggle ? hcToggle.closest(".voice-coach-bar") : null;
+      if (hcRow) hcRow.hidden = true;
+      // v5.38: lean-back home buttons.
+      const homeStart = document.getElementById("tv-home-start");
+      if (homeStart) homeStart.addEventListener("click", () => {
+        openProgram();
+        const startButton = document.getElementById("start-workout");
+        if (startButton) startButton.click();
+      });
+      const homePrograms = document.getElementById("tv-home-programs");
+      if (homePrograms) homePrograms.addEventListener("click", openProgram);
+      const homeSync = document.getElementById("tv-home-syncbtn");
+      if (homeSync) homeSync.addEventListener("click", showTvWelcome);
+      renderTvHomeSync();
+      if (tvIsUnlocked()) {
+        const home = document.getElementById("tv-home");
+        if (home) {
+          home.hidden = false;
+          requestAnimationFrame(() => document.getElementById("tv-home-title")?.focus());
+        }
+      }
       const googleSection = document.querySelector('#profile-dialog section[aria-labelledby="google-account-title"]');
       const googleSlot = document.getElementById("tv-welcome-google-slot");
       if (googleSection && googleSlot) googleSlot.appendChild(googleSection);
@@ -7675,6 +7762,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (send) send.addEventListener("click", sendProgressToTv);
         if (scan) scan.addEventListener("click", startTvScan);
         if (cancel) cancel.addEventListener("click", stopTvScan);
+        const handoffSend = document.getElementById("tv-handoff-send");
+        if (handoffSend) handoffSend.addEventListener("click", sendProgressToTv);
         // v5.37: one-tap jump from the Profile tab to the Sync to TV form.
         const gotoSync = document.getElementById("goto-phone-sync");
         if (gotoSync) gotoSync.addEventListener("click", openPhoneSyncForm);
@@ -7700,16 +7789,33 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // https://justinyocum4-code.github.io/Lynxos-Gym/?tvsync=CODE — so any
     // camera app (Google Lens included) opens it in a browser. Land the user
     // straight on the Sync to TV form with the code already filled in.
+    // v5.38: handoff card for plain-browser TV-link opens. A camera/Google
+    // scan lands in the browser, not the app — show the big code and where to
+    // enter it in the app, plus an in-browser send when Google is signed in.
+    let tvHandoffCode = "";
+    function updateTvHandoff(code) {
+      const card = document.getElementById("tv-handoff");
+      if (!card) return;
+      const pretty = code && code.length === 8 ? code.slice(0, 4) + "-" + code.slice(4) : (code || "????-????");
+      document.getElementById("tv-handoff-code").textContent = pretty;
+      const signedIn = !!cloudUserEmail;
+      document.getElementById("tv-handoff-signedin-note").hidden = !signedIn;
+      document.getElementById("tv-handoff-send").hidden = !signedIn;
+      card.hidden = false;
+      try { card.scrollIntoView({ block: "start" }); } catch (error) {}
+    }
     function handleTvSyncLink() {
       let code = "";
       try { code = new URLSearchParams(location.search).get("tvsync") || ""; }
       catch (error) { code = ""; }
       code = String(code).toUpperCase().replace(/[^A-Z0-9]/g, "");
       if (!code || isTvDevice()) return;
+      tvHandoffCode = code;
       const apply = () => {
         if (!document.getElementById("profile-dialog")) return;
         openProfile();
         openPhoneSyncForm(code.length === 8 ? code : "");
+        updateTvHandoff(code);
         const status = document.getElementById("phone-sync-status");
         if (status) {
           status.textContent = code.length === 8
@@ -7756,6 +7862,19 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         const back = event.key === "Escape" || event.keyCode === 4;
         if (left && !drawerOpen) { event.preventDefault(); openTvDrawer(); return; }
         if ((right || back) && drawerOpen) { event.preventDefault(); closeTvDrawer(); return; }
+        // v5.38: D-pad OK pauses/resumes the workout; Back leaves it.
+        const playerOpen = document.getElementById("player-dialog")?.open;
+        const ok = event.key === "Enter" || event.keyCode === 23;
+        const tagName = (event.target && event.target.tagName || "").toLowerCase();
+        const onControl = tagName === "button" || tagName === "a" || tagName === "input";
+        if (ok && playerOpen && !onControl) {
+          const pause = document.getElementById("session-pause");
+          if (pause) { event.preventDefault(); pause.click(); return; }
+        }
+        if (back && playerOpen && !drawerOpen) {
+          const quit = document.getElementById("session-quit");
+          if (quit) { event.preventDefault(); quit.click(); return; }
+        }
         const play = event.key === "MediaPlayPause" || event.key === "MediaPlay" || [85, 126, 127, 179].indexOf(event.keyCode) >= 0;
         if (play) {
           const playerOpen = document.getElementById("player-dialog")?.open;
