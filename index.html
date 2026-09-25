@@ -2940,8 +2940,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.41";
-    const LYNXOS_APP_VERSION_CODE = 57; // BUMP every release or the update banner never fires
+    const LYNXOS_APP_VERSION = "5.42";
+    const LYNXOS_APP_VERSION_CODE = 58; // BUMP every release or the update banner never fires
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
       const help = document.getElementById("health-connect-help");
@@ -3119,6 +3119,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         quickWorkoutFocus: state.quickWorkoutFocus, quickWorkoutDuration: state.quickWorkoutDuration,
         quickSession: state.quickSession === true,
         planWorkoutBackup: state.planWorkoutBackup,
+        // v5.42: a mid-workout "save for later" checkpoint now survives an app
+        // kill — relaunching offers to resume right where the set left off.
+        savedSession: state.savedSession,
         groceryChecks: state.groceryChecks,
         // v5.40 additions
         formCuesEnabled: state.formCuesEnabled !== false,
@@ -3215,6 +3218,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         }
         state.quickSession = false;
         state.planWorkoutBackup = null;
+        state.savedSession = data.savedSession || null;
+        // A checkpoint older than 7 days is stale — drop it so a relaunch does
+        // not offer to resume a workout from weeks ago.
+        if (state.savedSession && state.savedSession.savedAt) {
+          const checkpointTime = Date.parse(state.savedSession.savedAt);
+          if (Number.isFinite(checkpointTime) && Date.now() - checkpointTime > 7 * 24 * 60 * 60 * 1000) state.savedSession = null;
+        }
         state.groceryChecks = data.groceryChecks || {};
         // v5.40 additions
         state.formCuesEnabled = data.formCuesEnabled !== false;
