@@ -2177,6 +2177,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           <button class="primary" type="button" id="session-action" aria-label="Guided workout action, starting">Starting…</button>
           <button class="swap-btn" type="button" id="session-swap" aria-label="Swap the current exercise for an alternative" hidden>Swap exercise</button>
           <button class="secondary" type="button" id="share-workout" aria-label="Share completed workout summary" hidden>Share workout summary</button>
+          <button class="secondary" type="button" id="v546-next-cycle" aria-label="Start next 4-week cycle" hidden>Start next cycle</button>
         </div>
         <div class="session-management" id="session-management" aria-label="Workout safety, pause, or leave controls">
           <button class="unwell-button" type="button" id="session-unwell" aria-label="I feel unwell. Pause everything and show safety choices">I feel unwell</button>
@@ -2951,6 +2952,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       formCuesEnabled: true,
       lastSorenessCheck: "", sorenessLevel: "",
       missedDayDismissed: "",
+      // v5.46: timestamp (ms) of the most recent completed rest day, so the
+      // missed-day gap does not keep growing from planned rest days alone.
+      lastRestCompletedAt: 0,
       // v5.45 additions (backward-compatible; old snapshots restore without them)
       customExercises: [], exerciseNotes: {}, routines: [], measurements: [],
       sessionSets: [], historyFilter: ""
@@ -3018,8 +3022,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.45";
-    const LYNXOS_APP_VERSION_CODE = 61; // BUMP every release or the update banner never fires
+    const LYNXOS_APP_VERSION = "5.46";
+    const LYNXOS_APP_VERSION_CODE = 62; // BUMP every release or the update banner never fires
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
       const help = document.getElementById("health-connect-help");
@@ -3206,6 +3210,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         lastSorenessCheck: state.lastSorenessCheck || "",
         sorenessLevel: state.sorenessLevel || "",
         missedDayDismissed: state.missedDayDismissed || "",
+        lastRestCompletedAt: state.lastRestCompletedAt || 0,
         customExercises: state.customExercises || [], exerciseNotes: state.exerciseNotes || {},
         routines: state.routines || [], measurements: state.measurements || [],
         sessionSets: state.sessionSets || []
@@ -3312,6 +3317,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         state.lastSorenessCheck = data.lastSorenessCheck || "";
         state.sorenessLevel = data.sorenessLevel || "";
         state.missedDayDismissed = data.missedDayDismissed || "";
+        state.lastRestCompletedAt = Number(data.lastRestCompletedAt) || 0;
         // v5.45: restore new collections, merge custom exercises into the library,
         // and migrate any saved move that used a deleted exercise id.
         state.customExercises = Array.isArray(data.customExercises) ? data.customExercises : [];
@@ -3493,6 +3499,14 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // v5.40: the builder section opens only on explicit request from the
       // program screen — never from navigation, links, or scroll.
       if (sectionId === "builder" && state.explicitBuilderRequested !== true) return;
+      // v5.46 FIX (builder blank screen): the builder starts hidden and CSS
+      // [hidden]{display:none !important} beats the active-app-screen
+      // display:block rule, so opening it must clear hidden — otherwise the
+      // body hides every other section and the user gets a blank screen.
+      if (sectionId === "builder") {
+        section.hidden = false;
+        section.setAttribute("aria-hidden", "false");
+      }
       if (sectionId === "nutrition") { renderProteinTarget(); renderNutritionPlans(); }
       if (!activeAppSection) {
         appSectionReturn = returnContext || { type: "page", scrollY: window.scrollY };
@@ -3623,7 +3637,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     // v5.40: reopen on the earliest unfinished day — a plan that was browsed ahead
     // never resumes past training that has not been done yet.
     function normalizeProgramProgress() {
-      if (!Array.isArray(state.program) || state.program.length === 0) return;
+      if (!Array.isArray(state.program) || state.program.length === 0) { state.programPage = 0; return; }
+      // v5.46 FIX (fix 6): clamp before searching, so a restored page
+      // beyond the plan length cannot survive even when every day is done.
+      clampProgramPage();
       let firstUnfinished = -1;
       for (let i = 0; i < state.program.length; i++) {
         if (!state.completedProgramPages.has(i)) { firstUnfinished = i; break; }
@@ -3875,6 +3892,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const isRest = Boolean(item && item.isRestDay);
       if (!state.completedProgramPages.has(idx)) {
         state.completedProgramPages.add(idx);
+        // v5.46 FIX: record a rest completion so the missed-day gap (fix 2)
+        // does not keep counting completed rest days as missed days.
+        if (isRest) state.lastRestCompletedAt = Date.now();
         if (!isRest) {
           state.completedWorkouts += 1;
           if (state.lastCompletedPage === null || state.lastCompletedPage === idx || state.lastCompletedPage === idx - 1) state.workoutStreak += 1;
@@ -5286,8 +5306,37 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
     function daysSinceLastTraining() {
       const last = (state.workoutHistory || []).find(entry => entry && !entry.quick && Number(entry.date));
-      if (!last) return 0;
-      return Math.floor((Date.now() - Number(last.date)) / 86400000);
+      // v5.46 FIX: a completed rest day counts as recent activity too, so
+      // planned rest days alone cannot keep growing the "missed" gap.
+      const lastActivity = Math.max(last ? Number(last.date) : 0, Number(state.lastRestCompletedAt) || 0);
+      if (!lastActivity) return 0;
+      return Math.floor((Date.now() - lastActivity) / 86400000);
+    }
+    // v5.46: clamp programPage into range; returns true when the program is empty.
+    function clampProgramPage() {
+      if (!Array.isArray(state.program) || state.program.length === 0) {
+        state.programPage = 0;
+        return true;
+      }
+      state.programPage = Math.max(0, Math.min(state.program.length - 1, Number(state.programPage) || 0));
+      return false;
+    }
+    // v5.46: shared empty-program screen (fix 6) — never a stale/blank dialog.
+    function renderEmptyProgramPage() {
+      document.getElementById("program-title").textContent = "My Program workout program";
+      document.getElementById("program-week").textContent = "No program yet";
+      document.getElementById("program-position").textContent = "";
+      document.getElementById("program-page").innerHTML = `<h3>No program yet</h3><p>Build a four-week program to get started.</p><div class="program-extras-actions"><button class="primary" type="button" id="v546-build-program-empty">Build a new program</button></div>`;
+      document.getElementById("v546-build-program-empty").addEventListener("click", () => {
+        state.explicitBuilderRequested = true;
+        programDialog.close();
+        openAppSection("builder", { type: "program" });
+        announce("Program builder open.");
+      });
+      document.getElementById("start-workout").hidden = true;
+      document.getElementById("rest-continue").hidden = true;
+      saveActiveProgramRecord();
+      syncProgramManager();
     }
     function shiftPlanForward(days, label) {
       const idx = state.programPage;
@@ -5375,20 +5424,27 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       state.quickWorkoutTitle = "No-equipment session";
       startQuickWorkout({ moves, rounds: Math.max(2, (item.rounds || 3) - 1) });
     }
-    function renderProgramPage(announce = true) {
+    function renderProgramPage(announce = true, skipMissedInsert = false) {
+      // v5.46 FIX (fix 6): never render silently for an empty or
+      // out-of-range program — clamp first, show an explicit empty state.
+      if (clampProgramPage()) { renderEmptyProgramPage(); return; }
+      const item = state.program[state.programPage];
+      if (!item) { renderEmptyProgramPage(); return; }
       // v5.43: missed days sync into the plan automatically — no more
       // "catch me up or keep my place" choice. The plan absorbs the missed
       // days as rest and the streak is kept.
+      // v5.46 FIX (fix 2): skip the insert when the caller is advancing
+      // past a rest day, and when the current day is already a rest day —
+      // otherwise Rest Complete inserts identical rest days and the tap
+      // appears to do nothing, over and over.
       const today = todayKey();
       const missed = daysSinceLastTraining();
-      if (missed >= 2 && state.missedDayDismissed !== today) {
+      if (!skipMissedInsert && !item.isRestDay && missed >= 2 && state.missedDayDismissed !== today) {
         state.missedDayDismissed = today;
         const add = Math.min(7, missed);
         shiftPlanForward(add, `It has been ${missed} days since your last workout. Added ${add} rest ${add === 1 ? "day" : "days"} to ease you back in`);
         return;
       }
-      const item = state.program[state.programPage];
-      if (!item) return;
       state.workout = item.moves;
       state.rounds = item.rounds;
       const total = state.program.length;
@@ -5396,6 +5452,30 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const deloadNumber = item.isDeload ? state.program.slice(0, state.programPage + 1).filter(entry => entry.isDeload).length : 0;
       const deloadTotal = state.program.filter(entry => entry.isDeload).length;
       const isRestDay = Boolean(item.isRestDay);
+      // v5.46 FIX (fix 3): a completed rest day that is the last program
+      // item must not be a silent dead end — show Program complete with
+      // real next steps, instead of the same rest screen forever.
+      if (isRestDay && state.programPage === state.program.length - 1 && state.completedProgramPages.has(state.programPage)) {
+        document.getElementById("program-title").textContent = `${activeProgramRecord()?.name || "My Program"} workout program`;
+        document.getElementById("program-week").textContent = `Week ${item.week} · Program complete`;
+        document.getElementById("program-position").textContent = "Program complete";
+        document.getElementById("program-page").innerHTML = `<h3>Program complete</h3><p>You finished the last day of this program. Start a new cycle or build a new program.</p><div class="program-extras-actions"><button class="primary" type="button" id="v546-start-next-cycle">Start next cycle</button><button class="secondary" type="button" id="v546-build-new-program">Build a new program</button></div>`;
+        document.getElementById("v546-start-next-cycle").addEventListener("click", startNextCycle);
+        document.getElementById("v546-build-new-program").addEventListener("click", () => {
+          state.explicitBuilderRequested = true;
+          programDialog.close();
+          openAppSection("builder", { type: "program" });
+          // Note: do NOT call announce() here — inside renderProgramPage
+          // the name `announce` is the boolean parameter, not the global
+          // announcer function. Focus lands on the builder title instead.
+        });
+        document.getElementById("start-workout").hidden = true;
+        document.getElementById("rest-continue").hidden = true;
+        saveActiveProgramRecord();
+        syncProgramManager();
+        if (announce) document.getElementById("program-page").focus();
+        return;
+      }
       document.getElementById("program-title").textContent = `${activeProgramRecord()?.name || "My Program"} workout program`;
       document.getElementById("program-week").textContent = isRestDay ? `Week ${item.week} · Rest day` : item.isDeload ? `Deload week · ${item.rounds} easy rounds` : `Week ${item.week} · ${item.rounds} rounds`;
       document.getElementById("program-position").textContent = isRestDay ? "Recovery day" : item.isDeload ? `Deload workout ${deloadNumber} of ${deloadTotal}` : `Workout ${trainingDayNumber()} of ${hardTotal}`;
@@ -5442,11 +5522,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }));
       document.querySelectorAll("#program-page [data-swap-index]").forEach(button => button.addEventListener("click", () => swapProgramExercise(Number(button.dataset.swapIndex))));
       document.getElementById("start-next-cycle")?.addEventListener("click", startNextCycle);
-      document.getElementById("start-workout").addEventListener("click", () => {
-        state.savedSession = null;
-        programDialog.close();
-        startSession();
-      });
+      // v5.46 FIX (fix 5): #start-workout lives in the persistent dialog
+      // dock, outside #program-page, so re-wiring it on every render added
+      // one listener per render. Wire it once, like the v5.45 controls
+      // (startWorkoutButton is already declared above in this function).
+      if (startWorkoutButton && !startWorkoutButton.dataset.v546wired) {
+        startWorkoutButton.dataset.v546wired = "true";
+        startWorkoutButton.addEventListener("click", () => {
+          state.savedSession = null;
+          programDialog.close();
+          startSession();
+        });
+      }
       // v5.39: rest days offer "Rest complete — continue" instead of "Start workout".
       document.getElementById("start-workout").hidden = isRestDay;
       document.getElementById("rest-continue").hidden = !isRestDay;
@@ -5759,6 +5846,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         state.workout = [...backup.workout];
         state.rounds = backup.rounds;
         state.programPage = backup.programPage;
+        clampProgramPage(); // v5.46 FIX (fix 6): restored page must be in range
         state.activeWorkoutLabel = backup.activeWorkoutLabel;
       }
       state.quickSession = false;
@@ -6425,6 +6513,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (state.sessionPaused) resumePausedSession(); else pauseSession();
     }
 
+    // v5.46 FIX (fix 4): status lines below use v545-session-status (the
+    // id session-status was renamed in v5.45) and are guarded with ?. so a
+    // future rename can never throw inside a safety flow.
     function openUnwellSafety() {
       if (!sessionIsActive() || state.safetyActive) return;
       state.safetyActive = true;
@@ -6434,7 +6525,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       syncWorkoutMusic();
       if (quitWorkoutDialog.open) quitWorkoutDialog.close();
       if (!unwellDialog.open) unwellDialog.showModal();
-      document.getElementById("session-status").textContent = "Workout paused because you feel unwell. Sit down, breathe slowly, and drink water if you can.";
+      const v546Status = document.getElementById("v545-session-status"); if (v546Status) v546Status.textContent = "Workout paused because you feel unwell. Sit down, breathe slowly, and drink water if you can.";
       requestAnimationFrame(() => document.getElementById("unwell-title").focus());
     }
 
@@ -6445,10 +6536,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       state.safetyWasAutoPaused = false;
       if (shouldResume) {
         resumePausedSession();
-        document.getElementById("session-status").textContent = "Workout resumed after safety pause.";
+        const v546Status2 = document.getElementById("v545-session-status"); if (v546Status2) v546Status2.textContent = "Workout resumed after safety pause.";
       } else {
         syncSessionManagement();
-        document.getElementById("session-status").textContent = "Safety check closed. The workout is still paused.";
+        const v546Status3 = document.getElementById("v545-session-status"); if (v546Status3) v546Status3.textContent = "Safety check closed. The workout is still paused.";
         requestAnimationFrame(() => document.getElementById("session-pause").focus());
       }
     }
@@ -6493,6 +6584,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (quitWorkoutDialog.open) quitWorkoutDialog.close();
       if (playerDialog.open) playerDialog.close();
       state.programPage = checkpoint.programPage;
+      clampProgramPage(); // v5.46 FIX (fix 6): restored page must be in range
       renderProgramPage(false);
       if (!programDialog.open) programDialog.showModal();
       requestAnimationFrame(() => document.getElementById("resume-saved-workout")?.focus());
@@ -7245,6 +7337,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       completeCurrentWorkout();
       const finishedTrainingBlock = !completedQuickSession && state.deloadSuggested && !state.program[state.programPage]?.isDeload;
       const finishedItem = state.program[state.programPage];
+      const finishedIndex = state.programPage;
       // v5.25: finishing a workout moves the program to the next day automatically,
       // so the next session opens on day two instead of replaying the same day.
       let advancedToNext = false;
@@ -7274,19 +7367,35 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       document.getElementById("player-coach").innerHTML = "";
       document.getElementById("player-dose").textContent = `You completed the warm-up, workout, and cool-down, and now have ${state.earnedAchievements.size} badge${state.earnedAchievements.size === 1 ? "" : "s"}.`;
       document.getElementById("timer").hidden = true;
+      // v5.46 FIX (fix 7): finishing the last item used to leave no
+      // in-player route to the next cycle — offer it right here.
+      const showNextCycle = !completedQuickSession && !advancedToNext && finishedIndex === state.program.length - 1 && (Boolean(finishedItem?.isDeload) || state.deloadSuggested);
       document.getElementById("timer-label").textContent = completedQuickSession
         ? "Your one-off workout is complete. Your 4-week plan is unchanged."
         : finishedTrainingBlock
           ? "Your four training weeks are complete. An optional easier deload week is ready next in this program."
           : advancedToNext
             ? nextDayText
-            : "Share your summary or tell us whether this plan suits you.";
+            : showNextCycle
+              ? "Your program is complete. Start the next cycle when you are ready."
+              : "Share your summary or tell us whether this plan suits you.";
       document.getElementById("session-swap").hidden = true;
       document.getElementById("share-workout").hidden = false;
+      const nextCycleButton = document.getElementById("v546-next-cycle");
+      if (nextCycleButton) {
+        nextCycleButton.hidden = !showNextCycle;
+        if (!nextCycleButton.dataset.v546wired) {
+          nextCycleButton.dataset.v546wired = "true";
+          nextCycleButton.addEventListener("click", () => {
+            playerDialog.close();
+            startNextCycle();
+          });
+        }
+      }
       setSessionAction("Close workout", () => playerDialog.close());
       document.getElementById("workout-feedback").hidden = completedQuickSession;
       if (!completedQuickSession) renderWorkoutFeedback();
-      announceSession(`Workout complete. Warm-up and cool-down finished. Great job. ${nextDayText} You now have ${state.earnedAchievements.size} badge${state.earnedAchievements.size === 1 ? "" : "s"} earned.`);
+      announceSession(`Workout complete. Warm-up and cool-down finished. Great job. ${showNextCycle ? "Your program is complete. Start the next cycle when you are ready." : nextDayText} You now have ${state.earnedAchievements.size} badge${state.earnedAchievements.size === 1 ? "" : "s"} earned.`);
       logWorkoutToHealthConnect();
     }
 
@@ -7482,10 +7591,21 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         openProgram();
         return;
       }
+      // v5.46 FIX: with no saved program the Workout Plan tab must open the
+      // builder on purpose — previously it fell through to openAppSection,
+      // whose explicit-request gate returned early with no feedback at all.
+      if (link.dataset.navSection === "builder") {
+        state.explicitBuilderRequested = true;
+      }
       openAppSection(link.dataset.navSection);
     }));
     document.getElementById("hero-build-link")?.addEventListener("click", event => {
-      if (hasSavedProgram()) { event.preventDefault(); openProgram(); }
+      if (hasSavedProgram()) { event.preventDefault(); openProgram(); return; }
+      // v5.46 FIX: with no saved program, do not follow the default anchor
+      // to a hidden section (no movement, no feedback) — open the builder.
+      event.preventDefault();
+      state.explicitBuilderRequested = true;
+      openAppSection("builder");
     });
     document.getElementById("hero-check-updates")?.addEventListener("click", () => checkForGymUpdate(true));
     document.getElementById("builder-check-updates")?.addEventListener("click", () => checkForGymUpdate(true));
@@ -7511,7 +7631,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         return;
       }
       // v5.25: the builder hides once a program exists; unhide it for rebuilds.
-      if (destination === "builder") document.getElementById("builder").hidden = false;
+      // v5.46 FIX: also set the explicit-request flag, otherwise
+      // openAppSection's gate returns early (this branch was unreachable in
+      // markup, but must not be a silent dead end if a button is added).
+      if (destination === "builder") {
+        document.getElementById("builder").hidden = false;
+        state.explicitBuilderRequested = true;
+      }
       openAppSection(destination, { type: "program" });
     }));
     window.addEventListener("scroll", queueNavigationUpdate, { passive: true });
@@ -7531,7 +7657,15 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         state.rounds = state.program[state.programPage]?.rounds || 2;
         saveActiveProgramRecord();
         syncProgramManager();
-        renderProgramPage();
+        // v5.46 FIX (fix 2): skip the missed-day insert on a rest advance,
+        // or it inserts identical rest days and swallows this tap.
+        renderProgramPage(true, true);
+        requestAnimationFrame(() => { const page = document.getElementById("program-page"); if (page) page.focus(); });
+      } else {
+        // v5.46 FIX (fix 3): last-item rest day — re-render so the
+        // Program complete state (built into renderProgramPage) appears
+        // instead of a silent dead button.
+        renderProgramPage(true, true);
         requestAnimationFrame(() => { const page = document.getElementById("program-page"); if (page) page.focus(); });
       }
     });
