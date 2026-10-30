@@ -52,14 +52,21 @@ ul.clean li { background: #222; border: 1px solid var(--line); border-radius: 8p
 </div>
 <header>
 <h1>Lynxos Gym</h1>
-<p>Simple strength logging. Pick a routine, log your sets, see your progress.</p>
+<p>Today's workout, prescribed for you. Log your sets, rate them, and the next session adjusts.</p>
 </header>
 <main>
 <section class="tab-page active" id="tab-workout" aria-labelledby="workout-title">
 <h2 id="workout-title" tabindex="-1">Workout</h2>
 <p class="muted" id="workout-intro">Start a routine or an empty workout, then log each set as you finish it.</p>
+<div class="card" id="today-card">
+<h3>Today's workout</h3>
+<p class="muted" id="today-plan-meta"></p>
+<ul class="clean" id="today-list"></ul>
+<div class="row"><button type="button" class="primary" id="start-today">Start today's workout</button><button type="button" id="regenerate-week">Regenerate this week</button></div>
+<p class="status" id="today-status" role="status" aria-live="polite"></p>
+</div>
 <div class="card">
-<h3>Start a workout</h3>
+<h3>Other ways to start</h3>
 <label for="routine-picker">Routine</label>
 <select id="routine-picker" aria-label="Choose a routine to start"></select>
 <div class="row">
@@ -164,6 +171,10 @@ ul.clean li { background: #222; border: 1px solid var(--line); border-radius: 8p
 <label for="detail-note">Pinned note for this exercise</label>
 <textarea id="detail-note" rows="3" placeholder="For example, keep the bar close"></textarea>
 <div class="row">
+<button type="button" id="detail-demonstrate">Demonstrate this exercise</button>
+</div>
+<p class="muted" id="detail-demo"></p>
+<div class="row">
 <button type="button" id="detail-note-save">Save note</button>
 <button type="button" id="detail-add-workout">Add to current workout</button>
 <button type="button" id="detail-close">Close detail</button>
@@ -191,6 +202,13 @@ ul.clean li { background: #222; border: 1px solid var(--line); border-radius: 8p
 </section>
 <section class="tab-page" id="tab-progress" aria-labelledby="progress-title">
 <h2 id="progress-title" tabindex="-1">Progress</h2>
+<div class="card">
+<h3>Strength Score</h3>
+<p class="muted">Your own progress index, from your best lifts relative to your bodyweight. 100 is the top of this scale, not a rank against other people.</p>
+<p id="strength-overall"></p>
+<div id="strength-scores"></div>
+<p class="muted" id="strength-bodyweight"></p>
+</div>
 <div class="card">
 <h3>Calendar</h3>
 <label for="history-search">Search history</label>
@@ -290,6 +308,29 @@ ul.clean li { background: #222; border: 1px solid var(--line); border-radius: 8p
 </select>
 <div class="row"><button type="button" id="level-save">Save level</button></div>
 <p class="status" id="settings-status" role="status" aria-live="polite"></p>
+<h3>Weekly plan</h3>
+<p class="muted">Today's workout is built from this plan and recalculated after every finished session.</p>
+<label for="plan-split">Training split</label>
+<select id="plan-split" aria-label="Training split">
+<option value="push-pull-legs">Push, pull, legs</option>
+<option value="upper-lower">Upper, lower</option>
+<option value="full-body">Full body</option>
+<option value="custom">Custom mix</option>
+</select>
+<label for="plan-days">Days per week</label>
+<select id="plan-days" aria-label="Days per week">
+<option value="3">3 days</option>
+<option value="4">4 days</option>
+<option value="5">5 days</option>
+<option value="6">6 days</option>
+</select>
+<label for="plan-deload">Easier week</label>
+<select id="plan-deload" aria-label="Easier week frequency">
+<option value="off">Off</option>
+<option value="monthly">Every 4th week</option>
+</select>
+<div class="row"><button type="button" id="plan-save">Save weekly plan</button></div>
+<p class="status" id="plan-status" role="status" aria-live="polite"></p>
 <h3>Calculators</h3>
 <div class="row"><button type="button" id="open-onerep">Open 1-rep max calculator</button></div>
 <h3>TV sync</h3>
@@ -297,8 +338,8 @@ ul.clean li { background: #222; border: 1px solid var(--line); border-radius: 8p
 <h3>App info</h3>
 <dl id="app-info">
 <dt>App</dt><dd>Lynxos Gym</dd>
-<dt>Version</dt><dd>6.0</dd>
-<dt>Version code</dt><dd>63</dd>
+<dt>Version</dt><dd>6.1</dd>
+<dt>Version code</dt><dd>64</dd>
 </dl>
 <div class="row"><button type="button" id="share-app">Share this app</button></div>
 </div>
@@ -313,8 +354,8 @@ ul.clean li { background: #222; border: 1px solid var(--line); border-radius: 8p
 </nav>
 <script>
 "use strict";
-const LYNXOS_APP_VERSION = "6.0";
-const LYNXOS_APP_VERSION_CODE = 63;
+const LYNXOS_APP_VERSION = "6.1";
+const LYNXOS_APP_VERSION_CODE = 64;
 const STORE_KEY = "lynxosGymState.v1";
 const APK_URL = "https://github.com/justinyocum4-code/Lynxos-Gym/releases/latest/download/app-release.apk";
 const exercises = [
@@ -819,11 +860,336 @@ function doseReps(ex) {
   const m = /(\d+)/.exec(ex.dose);
   return m ? parseInt(m[1], 10) : 10;
 }
+function levelRank(l) { return l === "Advanced" ? 3 : l === "Intermediate" ? 2 : 1; }
+function weightStep(ex) {
+  if (!ex) return 2.5;
+  if (state.units === "metric") return ex.equipment === "Kettlebell" ? 2 : 1;
+  if (ex.equipment === "Kettlebell") return 5;
+  if (ex.equipment === "Dumbbells") return 2.5;
+  if (ex.equipment === "Barbell") return 5;
+  return 2.5;
+}
+function defaultWeight(ex) {
+  if (!ex) return null;
+  if (ex.equipment === "No equipment" || ex.equipment === "Ab roller" || ex.equipment === "Bands") return null;
+  if (state.units === "metric") return ex.equipment === "Kettlebell" ? 8 : 5;
+  return ex.equipment === "Kettlebell" ? 10 : 10;
+}
+function lastHistoryWeight(exerciseId) {
+  for (let i = 0; i < state.workoutHistory.length; i++) {
+    const sets = state.workoutHistory[i].sets || [];
+    for (let j = sets.length - 1; j >= 0; j--) {
+      if (sets[j].exerciseId === exerciseId && sets[j].weight != null) return Number(sets[j].weight);
+    }
+  }
+  return null;
+}
+function seedProgression(exerciseId) {
+  const ex = findExercise(exerciseId);
+  if (!ex) return null;
+  const top = Math.max(1, doseReps(ex));
+  const sets = [top, Math.max(1, top - 1), Math.max(1, top - 2)];
+  const w = lastHistoryWeight(exerciseId);
+  const prog = { weight: w != null ? w : defaultWeight(ex), sets: sets, top: top, reason: w != null ? "Starting from the weight you last lifted for this exercise." : "This is your first session with this exercise, starting at a beginner weight." };
+  state.progression[exerciseId] = prog;
+  return prog;
+}
+function getProgression(exerciseId) {
+  const p = state.progression[exerciseId];
+  if (p && Array.isArray(p.sets) && p.sets.length) return p;
+  return seedProgression(exerciseId);
+}
+function estimated1RM(exerciseId) {
+  let best = 0;
+  state.workoutHistory.forEach(function (h) {
+    (h.sets || []).forEach(function (s) {
+      if (s.exerciseId === exerciseId && s.weight != null && s.reps) {
+        const r = Math.min(Number(s.reps), 15);
+        const est = Number(s.weight) * (1 + r / 30);
+        if (est > best) best = est;
+      }
+    });
+  });
+  return best > 0 ? best : null;
+}
+function lastSessionFor(exerciseId) {
+  for (let i = 0; i < state.workoutHistory.length; i++) {
+    const h = state.workoutHistory[i];
+    const sets = (h.sets || []).filter(function (s) { return s.exerciseId === exerciseId; });
+    if (sets.length) return { history: h, sets: sets };
+  }
+  return null;
+}
+function buildInsights(exerciseId) {
+  const ex = findExercise(exerciseId);
+  if (!ex) return "";
+  const prog = getProgression(exerciseId);
+  const last = lastSessionFor(exerciseId);
+  const est = estimated1RM(exerciseId);
+  let text = "";
+  if (last) {
+    const desc = last.sets.map(function (s) { return (s.weight != null ? s.weight + " " + unitLabel() + " for " : "") + s.reps + " reps"; }).join(", ");
+    text += "Last time: " + desc + " on " + fmtDate(last.history.date) + ". ";
+  } else {
+    text += "You have not logged this exercise yet. ";
+  }
+  if (est != null) text += "Your estimated one-rep max is about " + Math.round(est) + " " + unitLabel() + ". ";
+  if (prog) {
+    const wText = prog.weight != null ? prog.weight + " " + unitLabel() : "bodyweight";
+    text += "Today's weight is " + wText + " because " + (prog.reason || "this is the next step in your ladder.") + " ";
+  }
+  return text;
+}
+function buildDemoText(ex) {
+  if (!ex) return "";
+  let text = "Demonstration for " + ex.name + ". ";
+  const steps = ex.steps || [];
+  if (steps.length) {
+    text += "Setup: " + steps[0] + " ";
+    text += "Steps: " + steps.join(" ") + " ";
+  }
+  if (ex.cue) text += "Watch out: " + ex.cue + " ";
+  if (ex.easier) text += "Easier option: " + ex.easier;
+  return text;
+}
+function speakAlways(msg) {
+  if (!msg) return;
+  try {
+    const t = bridge("LynxosTts");
+    if (t && typeof t.speak === "function") { t.speak(msg); return; }
+  } catch (e) {}
+  try {
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(new SpeechSynthesisUtterance(msg));
+    }
+  } catch (e) {}
+}
+function advanceProgressionForWorkout(workout) {
+  if (!workout) return;
+  workout.items.forEach(function (item) {
+    const ex = findExercise(item.exerciseId);
+    if (!ex) return;
+    const done = item.sets.filter(function (s) { return s.done; });
+    if (!done.length) return;
+    const prog = getProgression(item.exerciseId);
+    if (!prog) return;
+    const prescribed = prog.sets.slice();
+    const top = prog.top;
+    let allDone = true;
+    for (let i = 0; i < prescribed.length; i++) {
+      const s = done[i];
+      if (!s || Number(s.reps) < prescribed[i]) { allDone = false; break; }
+    }
+    const anyHard = done.some(function (s) { return s.rating === "hard"; });
+    const anyEasy = done.some(function (s) { return s.rating === "easy"; });
+    if (!allDone) {
+      prog.reason = "you did not finish every prescribed set last time, so we repeat this ladder.";
+      return;
+    }
+    if (anyHard) {
+      prog.reason = "you rated a set Hard last time, so we repeat this ladder before any weight step.";
+      return;
+    }
+    const allAtTop = prescribed.every(function (r) { return r >= top; });
+    if (allAtTop) {
+      if (prog.weight == null) {
+        const newTop = top + 1;
+        prog.top = newTop;
+        prog.sets = [newTop, Math.max(1, newTop - 1), Math.max(1, newTop - 2)];
+        prog.reason = "you finished the ladder at bodyweight, so the top rep target steps up.";
+      } else {
+        prog.weight = Math.round((Number(prog.weight) + weightStep(ex)) * 10) / 10;
+        prog.sets = [top, Math.max(1, top - 1), Math.max(1, top - 2)];
+        prog.reason = "you finished the ladder, so the weight steps up one increment.";
+      }
+      return;
+    }
+    // Add one rep to the earliest set below the top.
+    for (let i = 0; i < prescribed.length; i++) {
+      if (prescribed[i] < top) { prescribed[i] += 1; break; }
+    }
+    // Easy rating advances faster: add one more rep to the next set below the top, if any.
+    if (anyEasy) {
+      for (let i = 0; i < prescribed.length; i++) {
+        if (prescribed[i] < top) { prescribed[i] += 1; break; }
+      }
+    }
+    prog.sets = prescribed;
+    prog.reason = anyEasy ? "you rated a set Easy, so the ladder moves faster this time." : "you finished every prescribed set, so the ladder adds a rep.";
+  });
+}
+function workoutItemFromPrescription(exerciseId) {
+  const prog = getProgression(exerciseId);
+  const ex = findExercise(exerciseId);
+  if (!prog || !ex) return workoutItemFromExercise(exerciseId, 3, 10, null);
+  const sets = prog.sets.map(function (r) { return { weight: prog.weight, reps: r, type: "normal", superset: false, done: false, rating: "" }; });
+  return { exerciseId: exerciseId, sets: sets, prescribed: true };
+}
+function dayTypeForFocus(split, index) {
+  if (split === "upper-lower") return index % 2 === 0 ? "upper" : "lower";
+  if (split === "full-body") return "full";
+  if (split === "custom") { const cyc = ["full", "upper", "lower"]; return cyc[index % 3]; }
+  const cyc = ["push", "pull", "legs"];
+  return cyc[index % 3];
+}
+function dayTypeMatches(ex, dayType) {
+  const focus = ex.focus || [];
+  const name = (ex.name || "").toLowerCase();
+  if (dayType === "push") return focus.includes("upper") && /(press|push)/.test(name);
+  if (dayType === "pull") return focus.includes("upper") && /(row|pull|hang)/.test(name);
+  if (dayType === "legs") return focus.includes("lower");
+  return focus.includes(dayType);
+}
+function lastTrainedMs(exerciseId) {
+  for (let i = 0; i < state.workoutHistory.length; i++) {
+    const sets = state.workoutHistory[i].sets || [];
+    if (sets.some(function (s) { return s.exerciseId === exerciseId; })) return Number(state.workoutHistory[i].date) || 0;
+  }
+  return 0;
+}
+function generateWeekPlan(force) {
+  const today = new Date();
+  if (!force && state.weekPlan && Array.isArray(state.weekPlan.days) && state.weekPlan.days.length) {
+    const lastDay = state.weekPlan.days[state.weekPlan.days.length - 1];
+    const lastMs = new Date(lastDay.dateKey + "T12:00:00").getTime();
+    if (!isNaN(lastMs) && lastMs >= today.setHours(0, 0, 0, 0)) return state.weekPlan;
+  }
+  state.weekNumber = (state.weekNumber || 0) + 1;
+  const isDeload = state.planDeload === "monthly" && state.weekNumber % 4 === 0;
+  const days = [];
+  const used = {};
+  const now = new Date();
+  for (let d = 0; d < Number(state.planDays); d++) {
+    const dt = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d);
+    const key = todayKey(dt);
+    const dayType = dayTypeForFocus(state.planSplit, d);
+    let pool = exercises.filter(function (x) {
+      if (used[x.id]) return false;
+      if (!dayTypeMatches(x, dayType)) return false;
+      if (x.equipment !== "No equipment" && !state.equipment.includes(x.equipment)) return false;
+      if (levelRank(x.level) > levelRank(state.level)) return false;
+      return true;
+    });
+    // Deprioritize muscles trained in the last 2 days: sort by last trained (oldest first).
+    pool.sort(function (a, b) { return lastTrainedMs(a.id) - lastTrainedMs(b.id); });
+    if (pool.length < 6) {
+      const extra = exercises.filter(function (x) {
+        if (used[x.id]) return false;
+        if (pool.includes(x)) return false;
+        if (x.equipment !== "No equipment" && !state.equipment.includes(x.equipment)) return false;
+        return true;
+      });
+      extra.sort(function (a, b) { return lastTrainedMs(a.id) - lastTrainedMs(b.id); });
+      pool = pool.concat(extra);
+    }
+    const chosen = pool.slice(0, 6);
+    chosen.forEach(function (x) { used[x.id] = true; });
+    days.push({ dateKey: key, dayType: dayType, exerciseIds: chosen.map(function (x) { return x.id; }), isDeload: isDeload });
+  }
+  state.weekPlan = { weekNumber: state.weekNumber, isDeload: isDeload, days: days };
+  save();
+  return state.weekPlan;
+}
+function todayPlanDay() {
+  const plan = generateWeekPlan(false);
+  if (!plan || !plan.days) return null;
+  const key = todayKey();
+  const idx = plan.days.findIndex(function (d) { return d.dateKey === key; });
+  if (idx >= 0) return { type: "workout", day: plan.days[idx], index: idx };
+  const next = plan.days.find(function (d) { return d.dateKey > key; });
+  if (next) return { type: "rest", nextDay: next };
+  return { type: "rest", nextDay: null };
+}
+function renderToday() {
+  const meta = el("today-plan-meta");
+  const list = el("today-list");
+  const status = el("today-status");
+  if (!meta || !list) return;
+  const plan = generateWeekPlan(false);
+  const info = todayPlanDay();
+  if (!info) { meta.textContent = "No plan yet."; list.innerHTML = ""; return; }
+  const deloadNote = plan && plan.isDeload ? " This is an easier week." : "";
+  if (info.type === "rest") {
+    meta.textContent = "Rest day today." + (info.nextDay ? " Your next planned workout is " + info.nextDay.dateKey + "." : " Your week is finished. Regenerate a new week to keep going.") + deloadNote;
+    list.innerHTML = info.nextDay ? info.nextDay.exerciseIds.map(function (id) { const ex = findExercise(id); return "<li>" + esc(ex ? ex.name : "") + "</li>"; }).join("") : "";
+    return;
+  }
+  const day = info.day;
+  meta.textContent = "Today, " + day.dateKey + " — " + day.dayType + " day." + (day.isDeload ? " Easier week: weights are reduced." : "") + " Tap Start today's workout and log each set as you finish it.";
+  list.innerHTML = day.exerciseIds.map(function (id) {
+    const ex = findExercise(id);
+    const prog = ex ? getProgression(id) : null;
+    const wText = prog && prog.weight != null ? prog.weight + " " + unitLabel() : "bodyweight";
+    const setsText = prog ? prog.sets.join(", ") + " reps at " + wText : "";
+    return "<li><strong>" + esc(ex ? ex.name : "") + "</strong> — " + esc(setsText) + "<br><span class='muted'>" + esc(ex ? buildInsights(id) : "") + "</span></li>";
+  }).join("");
+}
+function startTodayWorkout() {
+  const info = todayPlanDay();
+  if (!info) return;
+  const day = info.type === "workout" ? info.day : info.nextDay;
+  if (!day) { const s = el("today-status"); if (s) s.textContent = "No planned workout left this week. Regenerate the week."; return; }
+  const items = day.exerciseIds.map(function (id) { return workoutItemFromPrescription(id); }).filter(Boolean);
+  if (day.isDeload) {
+    items.forEach(function (it) { it.sets.forEach(function (s) { if (s.weight != null) s.weight = Math.round(s.weight * 0.8 * 2) / 2; }); });
+  }
+  state.workout = { title: "Today's workout — " + day.dayType, routineId: null, startedAt: Date.now(), items: items, isToday: true };
+  announce("Today's workout started: " + day.dayType + ", " + items.length + " exercises.");
+  renderWorkout();
+  showTab("workout");
+}
+function computeStrengthScores() {
+  let bodyweight = null;
+  let bodyweightEstimated = true;
+  for (let i = 0; i < state.measurements.length; i++) {
+    if (state.measurements[i].weight != null) { bodyweight = Number(state.measurements[i].weight); bodyweightEstimated = false; break; }
+  }
+  if (!bodyweight) { bodyweight = state.units === "metric" ? 80 : 180; bodyweightEstimated = true; }
+  const perFocus = { full: [], upper: [], lower: [], core: [] };
+  const seen = {};
+  exercises.forEach(function (ex) {
+    const est = estimated1RM(ex.id);
+    if (est == null) return;
+    const total = ex.equipment === "Dumbbells" ? est * 2 : est;
+    const rel = total / bodyweight;
+    (ex.focus || []).forEach(function (f) { if (perFocus[f]) perFocus[f].push(rel); });
+    seen[ex.id] = rel;
+  });
+  function scoreOf(arr) { if (!arr.length) return null; const avg = arr.reduce(function (a, b) { return a + b; }, 0) / arr.length; return Math.min(100, Math.round(avg * 200)); }
+  const scores = {};
+  Object.keys(perFocus).forEach(function (f) { scores[f] = scoreOf(perFocus[f]); });
+  const all = Object.values(seen);
+  const overall = all.length ? Math.min(100, Math.round((all.reduce(function (a, b) { return a + b; }, 0) / all.length) * 200)) : null;
+  return { overall: overall, scores: scores, bodyweight: bodyweight, bodyweightEstimated: bodyweightEstimated, hasData: all.length > 0 };
+}
+function renderStrengthScores() {
+  const overall = el("strength-overall");
+  const wrap = el("strength-scores");
+  const bw = el("strength-bodyweight");
+  if (!overall || !wrap) return;
+  const s = computeStrengthScores();
+  if (!s.hasData) {
+    overall.textContent = "No Strength Score yet. Log a weighted workout and it will appear here.";
+    wrap.innerHTML = "";
+    if (bw) bw.textContent = "";
+    return;
+  }
+  overall.textContent = "Overall Strength Score: " + s.overall + " out of 100.";
+  wrap.innerHTML = ["full", "upper", "lower", "core"].map(function (f) {
+    const v = s.scores[f];
+    if (v == null) return "<p>" + f + ": no lifts logged yet.</p>";
+    return "<p>" + f + ": " + v + " out of 100</p><div class='bar'><span style='width:" + v + "%'></span></div>";
+  }).join("");
+  if (bw) bw.textContent = s.bodyweightEstimated ? "Bodyweight used: about " + s.bodyweight + " " + unitLabel() + " (estimate — save a body measurement in Progress for a personal score)." : "Bodyweight used: " + s.bodyweight + " " + unitLabel() + " from your latest measurement.";
+}
+
 const state = {
   units: "imperial", restDuration: 120, voiceCoachEnabled: true, formCuesEnabled: true,
   healthConnectEnabled: false, level: "Beginner", equipment: ["Kettlebell", "Dumbbells", "Ab roller", "Bands"],
   routines: [], customExercises: [], exerciseNotes: {}, workoutHistory: [], measurements: [],
   workout: null, historySearch: "", exerciseSearch: "", exerciseFocus: "all", exerciseEquipment: "all",
+  progression: {}, planSplit: "push-pull-legs", planDays: 4, planDeload: "monthly", weekPlan: null, weekNumber: 0,
   editingRoutineId: null, detailExerciseId: null, newRoutineItems: []
 };
 function persistable() {
@@ -832,7 +1198,8 @@ function persistable() {
     voiceCoachEnabled: state.voiceCoachEnabled, formCuesEnabled: state.formCuesEnabled,
     healthConnectEnabled: state.healthConnectEnabled, level: state.level, equipment: state.equipment,
     routines: state.routines, customExercises: state.customExercises, exerciseNotes: state.exerciseNotes,
-    workoutHistory: state.workoutHistory, measurements: state.measurements, savedAt: Date.now()
+    workoutHistory: state.workoutHistory, measurements: state.measurements,
+    progression: state.progression, planSplit: state.planSplit, planDays: state.planDays, planDeload: state.planDeload, weekPlan: state.weekPlan, weekNumber: state.weekNumber, savedAt: Date.now()
   };
 }
 function save() {
@@ -878,6 +1245,12 @@ function migrateOld(data) {
     state.exerciseNotes = data.exerciseNotes || {};
     state.workoutHistory = Array.isArray(data.workoutHistory) ? data.workoutHistory.filter(function (h) { return h && h.date; }) : [];
     state.measurements = Array.isArray(data.measurements) ? data.measurements : [];
+    state.progression = data.progression || {};
+    state.planSplit = data.planSplit || state.planSplit;
+    state.planDays = Number(data.planDays) || state.planDays;
+    state.planDeload = data.planDeload || state.planDeload;
+    state.weekPlan = data.weekPlan || null;
+    state.weekNumber = Number(data.weekNumber) || 0;
     return true;
   }
   if (data.v !== 1) return false;
@@ -1015,13 +1388,15 @@ function renderWorkout() {
           "<label>Weight (" + unitLabel() + ")<input type=\"number\" inputmode=\"decimal\" min=\"0\" data-set-weight=\"" + ii + ":" + si + "\" value=\"" + (s.weight != null ? s.weight : "") + "\"></label>" +
           "<label>Reps<input type=\"number\" inputmode=\"numeric\" min=\"1\" data-set-reps=\"" + ii + ":" + si + "\" value=\"" + s.reps + "\"></label>" +
           "<label>Set type<select data-set-type=\"" + ii + ":" + si + "\"><option value=\"warmup\"" + (s.type === "warmup" ? " selected" : "") + ">Warm-up</option><option value=\"normal\"" + (s.type === "normal" ? " selected" : "") + ">Normal</option><option value=\"drop\"" + (s.type === "drop" ? " selected" : "") + ">Drop</option><option value=\"failure\"" + (s.type === "failure" ? " selected" : "") + ">Failure</option></select></label>" +
+          "<label>How did it feel?<select data-set-rating=\"" + ii + ":" + si + "\"><option value=\"\"" + (!s.rating ? " selected" : "") + ">Not rated</option><option value=\"easy\"" + (s.rating === "easy" ? " selected" : "") + ">Easy</option><option value=\"hard\"" + (s.rating === "hard" ? " selected" : "") + ">Hard</option></select></label>" +
           "<button type=\"button\" data-complete-set=\"" + ii + ":" + si + "\"" + (s.done ? " disabled" : "") + ">" + (s.done ? "Logged" : "Complete set") + "</button>" +
           "<label><input type=\"checkbox\" data-set-super=\"" + ii + ":" + si + "\"" + (s.superset ? " checked" : "") + "> Superset</label>" +
           "<button type=\"button\" data-delete-set=\"" + ii + ":" + si + "\">Delete set</button>" +
           "</div>";
       }).join("");
-      return "<div class=\"card\"><h3>" + esc(ex.name) + "</h3><p class=\"muted\">" + esc(ex.equipment) + " · " + esc(ex.focus.join(", ")) + "</p><p>" + prevText + "</p>" + noteText + setRows +
-        "<div class=\"row\"><button type=\"button\" data-add-set=\"" + ii + "\">Add set</button><button type=\"button\" data-remove-exercise=\"" + ii + "\">Remove exercise</button></div></div>";
+      const insightsText = buildInsights(item.exerciseId);
+      return "<div class=\"card\"><h3>" + esc(ex.name) + "</h3><p class=\"muted\">" + esc(ex.equipment) + " · " + esc(ex.focus.join(", ")) + "</p><p>" + prevText + "</p>" + noteText + "<p><strong>Insights:</strong> " + esc(insightsText) + "</p>" + setRows +
+        "<div class=\"row\"><button type=\"button\" data-add-set=\"" + ii + "\">Add set</button><button type=\"button\" data-remove-exercise=\"" + ii + "\">Remove exercise</button><button type=\"button\" data-swap-exercise=\"" + ii + "\">Swap exercise</button><button type=\"button\" data-demo-exercise=\"" + ii + "\">Demonstrate</button></div></div>";
     }).join("");
   }
   fillExercisePicker(el("add-exercise-picker"));
@@ -1094,6 +1469,49 @@ function renderWorkout() {
       renderWorkout();
     });
   });
+  wrap.querySelectorAll("select[data-set-rating]").forEach(function (sel) {
+    sel.addEventListener("change", function () {
+      const parts = sel.dataset.setRating.split(":");
+      const item = state.workout.items[Number(parts[0])];
+      if (item) item.sets[Number(parts[1])].rating = sel.value;
+    });
+  });
+  wrap.querySelectorAll("button[data-swap-exercise]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      const item = state.workout.items[Number(btn.dataset.swapExercise)];
+      if (!item) return;
+      const ex = findExercise(item.exerciseId);
+      if (!ex) return;
+      const inWorkout = state.workout.items.map(function (it) { return it.exerciseId; });
+      const alt = exercises.find(function (x) {
+        if (inWorkout.includes(x.id)) return false;
+        if (!(x.focus || []).some(function (f) { return (ex.focus || []).includes(f); })) return false;
+        if (x.equipment !== "No equipment" && !state.equipment.includes(x.equipment)) return false;
+        return true;
+      });
+      const status = el("workout-status");
+      if (!alt) { if (status) status.textContent = "No matching swap found for " + ex.name + "."; announce("No matching swap found."); return; }
+      item.exerciseId = alt.id;
+      const fresh = workoutItemFromPrescription(alt.id);
+      if (fresh) item.sets = fresh.sets;
+      renderWorkout();
+      if (status) status.textContent = "Swapped to " + alt.name + ".";
+      announce("Swapped to " + alt.name + ".");
+    });
+  });
+  wrap.querySelectorAll("button[data-demo-exercise]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      const item = state.workout.items[Number(btn.dataset.demoExercise)];
+      if (!item) return;
+      const ex = findExercise(item.exerciseId);
+      if (!ex) return;
+      const text = buildDemoText(ex);
+      const status = el("workout-status");
+      if (status) status.textContent = "Demonstration playing for " + ex.name + ": " + text;
+      announce("Demonstration for " + ex.name + ".");
+      speakAlways(text);
+    });
+  });
 }
 function finishWorkout() {
   if (!state.workout) return;
@@ -1101,7 +1519,7 @@ function finishWorkout() {
   state.workout.items.forEach(function (item) {
     const ex = findExercise(item.exerciseId);
     item.sets.forEach(function (s) {
-      if (s.done) doneSets.push({ exerciseId: item.exerciseId, exerciseName: ex ? ex.name : "", weight: s.weight, reps: s.reps, type: s.type, superset: s.superset });
+      if (s.done) doneSets.push({ exerciseId: item.exerciseId, exerciseName: ex ? ex.name : "", weight: s.weight, reps: s.reps, type: s.type, superset: s.superset, rating: s.rating || "" });
     });
   });
   if (!doneSets.length) {
@@ -1112,6 +1530,7 @@ function finishWorkout() {
   }
   const endMs = Date.now();
   const durationSec = Math.floor((endMs - Number(state.workout.startedAt)) / 1000);
+  advanceProgressionForWorkout(state.workout);
   const record = { date: endMs, durationSec: durationSec, title: state.workout.title, exercises: state.workout.items.length, sets: doneSets };
   state.workoutHistory.unshift(record);
   stopRest();
@@ -1123,7 +1542,9 @@ function finishWorkout() {
   } catch (e) {}
   state.workout = null;
   save();
+  generateWeekPlan(false);
   renderWorkout();
+  renderToday();
   renderProgress();
   const status = el("workout-status");
   if (status) status.textContent = "Workout finished and saved to Progress.";
@@ -1227,9 +1648,11 @@ function openExerciseDetail(exerciseId) {
   if (cue) { cue.textContent = state.formCuesEnabled ? (ex.cue || "") : ""; cue.hidden = !state.formCuesEnabled; }
   const easier = el("detail-easier"); if (easier) easier.textContent = ex.easier ? "Easier option: " + ex.easier : "";
   const note = el("detail-note"); if (note) note.value = state.exerciseNotes[exerciseId] || "";
+  const demo = el("detail-demo"); if (demo) demo.textContent = "";
   const status = el("detail-status"); if (status) status.textContent = "";
 }
 function renderProgress() {
+  renderStrengthScores();
   const q = (state.historySearch || "").toLowerCase();
   const cal = el("calendar-list");
   if (cal) {
@@ -1320,6 +1743,12 @@ function renderSettings() {
   }
   const level = el("level-select");
   if (level) level.value = state.level;
+  const planSplit = el("plan-split");
+  if (planSplit) planSplit.value = state.planSplit;
+  const planDays = el("plan-days");
+  if (planDays) planDays.value = String(state.planDays);
+  const planDeload = el("plan-deload");
+  if (planDeload) planDeload.value = state.planDeload;
   const checks = el("equipment-checks");
   if (checks) {
     const allEquip = [];
@@ -1405,6 +1834,43 @@ function wireStatic() {
   });
   const startEmpty = el("start-empty");
   if (startEmpty) startEmpty.addEventListener("click", startEmptyWorkout);
+  const startToday = el("start-today");
+  if (startToday) startToday.addEventListener("click", startTodayWorkout);
+  const regenWeek = el("regenerate-week");
+  if (regenWeek) regenWeek.addEventListener("click", function () {
+    generateWeekPlan(true);
+    renderToday();
+    const s = el("today-status");
+    if (s) s.textContent = "New week generated.";
+    announce("New week generated.");
+  });
+  const detailDemo = el("detail-demonstrate");
+  if (detailDemo) detailDemo.addEventListener("click", function () {
+    const ex = findExercise(state.detailExerciseId);
+    if (!ex) return;
+    const text = buildDemoText(ex);
+    const demo = el("detail-demo");
+    if (demo) demo.textContent = text;
+    const status = el("detail-status");
+    if (status) status.textContent = "Demonstration playing for " + ex.name + ".";
+    announce("Demonstration for " + ex.name + ".");
+    speakAlways(text);
+  });
+  const planSave = el("plan-save");
+  if (planSave) planSave.addEventListener("click", function () {
+    const split = el("plan-split");
+    const days = el("plan-days");
+    const deload = el("plan-deload");
+    if (split) state.planSplit = split.value;
+    if (days) state.planDays = Number(days.value) || 4;
+    if (deload) state.planDeload = deload.value;
+    save();
+    generateWeekPlan(true);
+    renderToday();
+    const status = el("plan-status");
+    if (status) status.textContent = "Weekly plan saved and regenerated.";
+    announce("Weekly plan saved.");
+  });
   const stopRestBtn = el("stop-rest");
   if (stopRestBtn) stopRestBtn.addEventListener("click", stopRest);
   const addEx = el("add-exercise");
@@ -1671,10 +2137,10 @@ function wireStatic() {
   const shareBtn = el("share-app");
   if (shareBtn) shareBtn.addEventListener("click", function () {
     try {
-      if (navigator.share) { navigator.share({ title: "Lynxos Gym", text: "Lynxos Gym 6.0 — simple strength logging." }); return; }
+      if (navigator.share) { navigator.share({ title: "Lynxos Gym", text: "Lynxos Gym 6.1 — today's workout, prescribed for you." }); return; }
     } catch (e) {}
     const status = el("settings-status");
-    if (status) status.textContent = "Sharing is not available in this view. Lynxos Gym 6.0 is the app to share.";
+    if (status) status.textContent = "Sharing is not available in this view. Lynxos Gym 6.1 is the app to share.";
   });
 }
 loadState();
@@ -1687,6 +2153,8 @@ renderRoutines();
 renderExercises();
 renderProgress();
 renderSettings();
+generateWeekPlan(false);
+renderToday();
 renderWorkout();
 </script>
 </body>
