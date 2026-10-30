@@ -1129,6 +1129,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       #session-action { min-height: 50px; }
       .session-management { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .4rem; }
       .session-management button { min-height: 48px !important; min-width: 0 !important; padding: .4rem .45rem; font-size: .82rem; line-height: 1.15; }
+  .v545-panel { background: #1d1d1d; border: 1px solid #3a3a3a; border-radius: 10px; padding: 1rem; margin: 1rem 0; }
+  .v545-panel h3 { color: #fff; }
+  .v545-panel label { display: block; margin: .5rem 0; font-weight: 700; }
+  .v545-panel input, .v545-panel select, .v545-panel textarea { width: 100%; min-height: 44px; margin-top: .25rem; padding: .5rem; border-radius: 7px; border: 1px solid #555; background: #141414; color: #fff; }
+  .v545-row { display: flex; flex-wrap: wrap; gap: .75rem; }
+  .v545-row label { flex: 1 1 140px; }
+  .v545-bar { background: #c9a227; height: 14px; border-radius: 7px; margin: .25rem 0 .75rem; }
   </style>
 </head>
 <body>
@@ -1389,7 +1396,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <button class="choice lib-filter" type="button" aria-pressed="false" data-filter="Weighted vest">Weighted vest</button>
         <button class="choice lib-filter" type="button" aria-pressed="false" data-filter="Suspension trainer">Suspension trainer</button>
         <button class="choice lib-filter" type="button" aria-pressed="false" data-filter="Step platform">Step platform</button>
-        <button class="choice lib-filter" type="button" aria-pressed="false" data-filter="Exercise mat">Exercise mat</button>
         <button class="choice lib-filter" type="button" aria-pressed="false" data-filter="No equipment">Bodyweight</button>
         <button class="choice lib-filter" type="button" aria-pressed="false" data-filter="Weight plates">Weight plates</button>
         <button class="choice lib-filter" type="button" aria-pressed="false" data-filter="Squat rack">Squat rack</button>
@@ -1401,11 +1407,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <button class="choice lib-filter" type="button" aria-pressed="false" data-filter="Rowing machine">Rower</button>
         <button class="choice lib-filter" type="button" aria-pressed="false" data-filter="Smith machine">Smith machine</button>
         <button class="choice lib-filter" type="button" aria-pressed="false" data-filter="EZ curl bar">EZ curl bar</button>
-        <button class="choice lib-filter" type="button" aria-pressed="false" data-filter="Flat bench">Flat bench</button>
         <button class="choice lib-filter" type="button" aria-pressed="false" data-filter="Adjustable bench">Adjustable bench</button>
       </div>
       <p class="favorites-status" id="favorites-status" role="status" aria-live="polite">No favorite exercises yet. Use the star button on any exercise to add one.</p>
       <div class="library-grid" id="library-grid"></div>
+      <div class="v545-panel" aria-label="Add a custom exercise">
+        <h3>Add a custom exercise</h3>
+        <p>No limit. Custom exercises appear in the library and can be picked by the plan builder.</p>
+        <label><strong>Name</strong><input id="v545-custom-name" type="text" aria-label="Custom exercise name" placeholder="Example: Dumbbell halo"></label>
+        <label><strong>Equipment</strong><select id="v545-custom-equipment" aria-label="Custom exercise equipment"><option>Dumbbells</option><option>Kettlebell</option><option>Bands</option><option>Ab roller</option><option>No equipment</option><option>Bench</option><option>Barbell</option></select></label>
+        <label><strong>Focus</strong><select id="v545-custom-focus" aria-label="Custom exercise focus"><option value="full">Full body</option><option value="upper">Upper body</option><option value="lower">Lower body</option><option value="core">Core</option></select></label>
+        <label><strong>Steps, one per line</strong><textarea id="v545-custom-steps" rows="3" aria-label="Custom exercise steps"></textarea></label>
+        <button class="primary" type="button" id="v545-add-custom">Add custom exercise</button>
+        <p id="v545-custom-status" role="status" aria-live="polite"></p>
+      </div>
     </section>
 
     <section id="nutrition" aria-labelledby="nutrition-title">
@@ -1548,6 +1563,58 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       </div>
       <p class="achievement-alert" id="achievement-alert" aria-live="polite"></p>
       <div class="achievement-grid" id="achievement-grid"></div>
+      <div class="v545-panel" aria-label="Progress graphs">
+        <h3>Progress at a glance</h3>
+        <p id="v545-progress-text" role="status">Finish a workout with the new set logger and your graphs will appear here.</p>
+        <div id="v545-progress-bars" aria-label="Sets per muscle group"></div>
+        <h3>Best weights</h3>
+        <ul id="v545-best-weights"></ul>
+        <h3>Trainer suggestions</h3>
+        <p>When you hit the top of an exercise's listed reps, the next session suggests a slightly heavier load, or extra reps for bodyweight moves.</p>
+        <ul id="v545-trainer-suggestions"></ul>
+      </div>
+      <div class="v545-panel" aria-label="Warm-up calculator">
+        <h3>Warm-up calculator</h3>
+        <p>Enter a working weight to get warm-up sets of about 50 percent for 5 reps, 70 percent for 3 reps, and 90 percent for 1 rep.</p>
+        <label><strong>Working weight</strong><input id="v545-warmup-weight" type="number" inputmode="decimal" min="1" step="1" value="100" aria-label="Working weight for warm-up calculation"></label>
+        <button class="secondary" type="button" id="v545-warmup-calc">Calculate warm-up sets</button>
+        <p id="v545-warmup-result" role="status" aria-live="polite"></p>
+      </div>
+      <div class="v545-panel" aria-label="Body measurements">
+        <h3>Body measurements</h3>
+        <p>Weight and waist plus chest, arms, thighs, hips, and neck. Entries are dated and kept in a list, newest first.</p>
+        <div class="v545-row">
+          <label><strong>Date</strong><input id="v545-measure-date" type="date" aria-label="Measurement date"></label>
+          <label><strong>Weight</strong><input id="v545-measure-weight" type="number" inputmode="decimal" min="0" step="0.1" aria-label="Body weight"></label>
+          <label><strong>Waist</strong><input id="v545-measure-waist" type="number" inputmode="decimal" min="0" step="0.1" aria-label="Waist measurement"></label>
+          <label><strong>Chest</strong><input id="v545-measure-chest" type="number" inputmode="decimal" min="0" step="0.1" aria-label="Chest measurement"></label>
+          <label><strong>Arms</strong><input id="v545-measure-arms" type="number" inputmode="decimal" min="0" step="0.1" aria-label="Arm measurement"></label>
+          <label><strong>Thighs</strong><input id="v545-measure-thighs" type="number" inputmode="decimal" min="0" step="0.1" aria-label="Thigh measurement"></label>
+          <label><strong>Hips</strong><input id="v545-measure-hips" type="number" inputmode="decimal" min="0" step="0.1" aria-label="Hip measurement"></label>
+          <label><strong>Neck</strong><input id="v545-measure-neck" type="number" inputmode="decimal" min="0" step="0.1" aria-label="Neck measurement"></label>
+        </div>
+        <button class="primary" type="button" id="v545-add-measure">Save measurement</button>
+        <p id="v545-measure-status" role="status" aria-live="polite"></p>
+        <ul id="v545-measure-list"></ul>
+      </div>
+    </section>
+
+    <section id="routines" aria-labelledby="routines-title">
+      <div class="section-head"><div>
+        <h2 id="routines-title">Routines and calendar</h2>
+        <p>Save any program as a named routine, run it again any time, and see your training days on a simple calendar list. No limit on routines.</p>
+      </div></div>
+      <div class="v545-panel">
+        <label><strong>Routine name</strong><input id="v545-routine-name" type="text" aria-label="Routine name" placeholder="Example: Push day"></label>
+        <button class="primary" type="button" id="v545-save-routine">Save current workout as a routine</button>
+        <p id="v545-routine-status" role="status" aria-live="polite"></p>
+        <ul id="v545-routine-list"></ul>
+      </div>
+      <div class="v545-panel">
+        <h3>Calendar</h3>
+        <p id="v545-calendar-text">Completed workouts appear here, newest first, with the date and title.</p>
+        <ul id="v545-calendar"></ul>
+      </div>
     </section>
 
     <section class="safety" aria-labelledby="safety-title">
@@ -1610,6 +1677,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <a class="bottom-nav-link" href="#achievements" data-nav-section="achievements" aria-label="Progress and achievements">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="5"/><path d="m9 13-1 8 4-2 4 2-1-8M9.5 9l1.5 1.5L14.5 7"/></svg>
           <span>Progress</span>
+        </a>
+      </li>
+      <li class="bottom-nav-item">
+        <a class="bottom-nav-link" href="#routines" data-nav-section="routines" aria-label="Routines and calendar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5zM5 9h14M8 4v16"/></svg>
+          <span>Routines</span>
         </a>
       </li>
       <li class="bottom-nav-item">
@@ -2034,6 +2107,21 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         <div id="player-coach"></div>
         <p id="player-dose"></p>
         <p id="player-upnext" aria-live="polite"></p>
+        <div class="v545-panel" id="v545-session-panel" aria-label="Fast set logging">
+          <p id="v545-previous-lift" role="status">No previous logged set for this exercise yet.</p>
+          <p id="v545-note-display"></p>
+          <p id="v545-progression-display"></p>
+          <div class="v545-row">
+            <label><strong>Set type</strong><select id="v545-set-type" aria-label="Set type"><option value="normal">Normal</option><option value="warm-up">Warm-up</option><option value="drop">Drop set</option><option value="failure">Failure set</option></select></label>
+            <label><strong>Weight</strong><input id="v545-set-weight" type="number" inputmode="decimal" min="0" step="1" aria-label="Weight for this set"></label>
+            <label><strong>Reps</strong><input id="v545-set-reps" type="number" inputmode="numeric" min="1" step="1" aria-label="Reps for this set"></label>
+          </div>
+          <label><input id="v545-superset" type="checkbox"> Part of a superset with the next exercise</label>
+          <button class="primary" type="button" id="v545-complete-set">Complete set and start rest</button>
+          <button class="secondary" type="button" id="v545-warmup-from-session">Show warm-up sets for this weight</button>
+          <p id="v545-session-status" role="status" aria-live="polite"></p>
+          <ul id="v545-session-sets" aria-label="Sets logged in this session"></ul>
+        </div>
       </section>
       <div class="voice-coach-bar">
         <div class="voice-coach-copy">
@@ -2217,7 +2305,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       <section aria-labelledby="workout-history-title">
         <h3 id="workout-history-title">Workout History</h3>
         <p id="workout-history-summary" role="status"></p>
-        <ul id="workout-history-list" class="history-list"></ul>
+        <label><strong>Search history</strong><input id="v545-history-search" type="search" aria-label="Search workout history" placeholder="Search by workout title"></label>
+      <ul id="workout-history-list" class="history-list"></ul>
         <button class="secondary" type="button" id="copy-history-export" style="margin-top:.5rem;">Copy history for Lynxos Health</button>
         <p id="history-export-status" role="status" aria-live="polite"></p>
         <textarea id="history-export-fallback" hidden readonly rows="4" aria-label="Copied workout history data" style="width:100%;margin-top:.5rem;"></textarea>
@@ -2590,12 +2679,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         cue: "Use a low height and keep your whole foot on the platform.", easier: "Tap the step without climbing onto it."
       },
       {
-        id: "mat-bridge", name: "Glute bridge", equipment: "Exercise mat", focus: ["full","lower","core"], level: "Beginner", dose: "14 reps",
-        summary: "Train the hips and core from a comfortable floor position.",
-        steps: ["Lie on your back with knees bent and feet flat.", "Brace your middle and press through your feet.", "Lift your hips until your body forms a line from shoulders to knees.", "Pause, then lower slowly."],
-        cue: "Finish by squeezing your glutes, not arching your lower back.", easier: "Use a smaller lift."
-      },
-      {
         id: "bw-squat", name: "Bodyweight squat", equipment: "No equipment", focus: ["full","lower"], level: "Beginner", dose: "13 reps",
         summary: "Build leg strength with a controlled squat using only your body weight.",
         steps: ["Stand with feet about shoulder-width apart.", "Brace your middle and sit your hips down between your heels.", "Keep your knees tracking over your toes.", "Press through your whole feet to stand tall."],
@@ -2734,12 +2817,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         cue: "Keep your elbows still and avoid swinging.", easier: "Use an unloaded bar or fewer repetitions."
       },
       {
-        id: "flat-bench-push", name: "Flat-bench incline push-up", equipment: "Flat bench", focus: ["full","upper","core"], level: "Beginner", dose: "12 reps",
-        summary: "Use a stable flat bench to make push-ups more approachable.",
-        steps: ["Make sure the bench cannot slide.", "Place your hands on the bench and walk your feet back.", "Lower your chest toward the bench.", "Press away while keeping your body straight."],
-        cue: "Keep your hips in line with your shoulders.", easier: "Use a higher hand position on a secure surface."
-      },
-      {
         id: "adjustable-bench-push", name: "High-incline bench push-up", equipment: "Adjustable bench", focus: ["full","upper","core"], level: "Beginner", dose: "12 reps",
         summary: "Set an adjustable bench high for a stable incline push-up.",
         steps: ["Lock the bench securely at a high incline.", "Place your hands on the top edge and walk your feet back.", "Lower your chest toward the pad.", "Press away with your body in one line."],
@@ -2873,7 +2950,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       explicitBuilderRequested: false,
       formCuesEnabled: true,
       lastSorenessCheck: "", sorenessLevel: "",
-      missedDayDismissed: ""
+      missedDayDismissed: "",
+      // v5.45 additions (backward-compatible; old snapshots restore without them)
+      customExercises: [], exerciseNotes: {}, routines: [], measurements: [],
+      sessionSets: [], historyFilter: ""
     };
 
     // ---- Lynxos Gym persistence: keep app data across restarts ----
@@ -2938,8 +3018,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function appStorage() {
       return nativeStoreBridge() || window.localStorage;
     }
-    const LYNXOS_APP_VERSION = "5.44";
-    const LYNXOS_APP_VERSION_CODE = 59; // BUMP every release or the update banner never fires
+    const LYNXOS_APP_VERSION = "5.45";
+    const LYNXOS_APP_VERSION_CODE = 61; // BUMP every release or the update banner never fires
     function syncHealthConnectRow() {
       const toggle = document.getElementById("health-connect-toggle");
       const help = document.getElementById("health-connect-help");
@@ -3125,7 +3205,10 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         formCuesEnabled: state.formCuesEnabled !== false,
         lastSorenessCheck: state.lastSorenessCheck || "",
         sorenessLevel: state.sorenessLevel || "",
-        missedDayDismissed: state.missedDayDismissed || ""
+        missedDayDismissed: state.missedDayDismissed || "",
+        customExercises: state.customExercises || [], exerciseNotes: state.exerciseNotes || {},
+        routines: state.routines || [], measurements: state.measurements || [],
+        sessionSets: state.sessionSets || []
       };
     }
 
@@ -3229,6 +3312,48 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         state.lastSorenessCheck = data.lastSorenessCheck || "";
         state.sorenessLevel = data.sorenessLevel || "";
         state.missedDayDismissed = data.missedDayDismissed || "";
+        // v5.45: restore new collections, merge custom exercises into the library,
+        // and migrate any saved move that used a deleted exercise id.
+        state.customExercises = Array.isArray(data.customExercises) ? data.customExercises : [];
+        state.exerciseNotes = data.exerciseNotes || {};
+        state.routines = Array.isArray(data.routines) ? data.routines : [];
+        state.measurements = Array.isArray(data.measurements) ? data.measurements : [];
+        state.sessionSets = Array.isArray(data.sessionSets) ? data.sessionSets : [];
+        state.customExercises.forEach(function (custom) {
+          if (custom && custom.id && !exercises.some(function (item) { return item.id === custom.id; })) exercises.push(custom);
+        });
+        var v545Map = { "mat-bridge": "bw-bridge", "flat-bench-push": "bench-push" };
+        var v545FixMoves = function (moves) {
+          if (!Array.isArray(moves)) return moves;
+          var seen = {};
+          return moves.map(function (move) {
+            var id = move && (move.id || move.exerciseId);
+            if (id && v545Map[id]) {
+              var kept = exercises.find(function (item) { return item.id === v545Map[id]; });
+              return kept || move;
+            }
+            return move;
+          }).filter(function (move) {
+            var id = move && move.id;
+            if (id && seen[id]) return false;
+            if (id) seen[id] = true;
+            return true;
+          });
+        };
+        state.workout = v545FixMoves(state.workout);
+        state.quickWorkout = v545FixMoves(state.quickWorkout);
+        state.program = (state.program || []).map(function (page) {
+          if (page && Array.isArray(page.moves)) page.moves = v545FixMoves(page.moves);
+          return page;
+        });
+        state.programs = (state.programs || []).map(function (record) {
+          if (record && record.plan) record.plan = (record.plan || []).map(function (page) {
+            if (page && Array.isArray(page.moves)) page.moves = v545FixMoves(page.moves);
+            return page;
+          });
+          return record;
+        });
+        state.favorites = new Set([...state.favorites].filter(function (id) { return exercises.some(function (item) { return item.id === id; }); }));
         lastPersistSnapshot = JSON.stringify(persistableState());
       } catch (error) { return false; }
       return true;
@@ -3273,7 +3398,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       library: "Exercises",
       nutrition: "Nutrition Basics",
       learn: "Learn the Basics",
-      achievements: "Progress & Achievements"
+      achievements: "Progress & Achievements",
+      routines: "Routines & Calendar"
     };
 
     const goalNames = {
@@ -3977,7 +4103,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       "vest-march": { motion: "march", caption: "March with quiet steps and keep your torso tall." },
       "suspension-row": { motion: "row", caption: "Keep your body straight as your chest moves toward the handles." },
       "step-up": { motion: "lunge", caption: "Place your whole foot on the step and rise without pushing off the floor." },
-      "mat-bridge": { motion: "floorpress", caption: "Press through your feet and lift with your glutes, not your lower back." },
       "bw-squat": { motion: "squat", caption: "Sit between your heels and keep your chest lifted." },
       "bw-wall-push": { motion: "chestpress", caption: "Keep your body straight as your chest moves toward the wall." },
       "bw-knee-push": { motion: "floorpress", caption: "Keep a straight line from your knees through your shoulders." },
@@ -4001,7 +4126,6 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       "rower-stroke": { motion: "row", caption: "Drive with legs, then body, then arms." },
       "smith-squat": { motion: "squat", caption: "Keep your feet flat and use a controlled depth." },
       "ez-curl": { motion: "row", caption: "Keep your elbows still and avoid swinging." },
-      "flat-bench-push": { motion: "floorpress", caption: "Keep your body in one line as you press." },
       "adjustable-bench-push": { motion: "floorpress", caption: "Confirm the bench is locked before you begin." },
       "aw-kickback": { motion: "march", caption: "Squeeze your glute at the top and keep your hips level." },
       "aw-leglift": { motion: "march", caption: "Lift with control and keep your torso tall." },
@@ -4884,21 +5008,21 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
     function planPriorities(focus) {
       const priorities = {
-        full: ["cable-row", "leg-press", "lat-pulldown", "smith-squat", "rower-stroke", "treadmill-walk", "bike-pedal", "plate-squat", "flat-bench-push", "adjustable-bench-push", "rack-supported-squat", "bw-squat", "bw-wall-push", "bw-knee-push", "bw-reverse-lunge", "bw-bridge", "bw-deadbug", "bw-birddog", "bw-plank-tap", "bw-march", "barbell-deadlift", "sandbag-squat", "vest-march", "suspension-row", "step-up", "mat-bridge", "db-floor", "band-row", "kb-goblet", "bench-sit", "med-halo", "ball-wall-squat", "bar-hang", "rope-step", "ab-wall", "band-press", "db-rdl", "kb-row", "db-suitcase", "ab-hold", "band-pallof", "kb-deadlift"],
-        upper: ["cable-row", "cable-press", "lat-pulldown", "ez-curl", "plate-raise", "flat-bench-push", "adjustable-bench-push", "bw-wall-push", "bw-knee-push", "bw-prone-y", "bw-plank-tap", "suspension-row", "barbell-row", "db-floor", "band-press", "band-row", "bench-push", "bar-hang", "med-halo", "ball-push", "kb-row", "db-row", "kb-press", "bar-scap", "ab-hold"],
-        lower: ["leg-press", "smith-squat", "rack-supported-squat", "treadmill-walk", "bike-pedal", "rower-stroke", "plate-squat", "bw-squat", "bw-reverse-lunge", "bw-bridge", "bw-calf", "bw-march", "barbell-deadlift", "sandbag-squat", "vest-march", "step-up", "mat-bridge", "kb-goblet", "db-rdl", "med-squat", "bench-sit", "ball-wall-squat", "rope-step", "band-squat", "kb-deadlift", "db-split", "rope-bounce"],
-        core: ["cable-press", "rower-stroke", "plate-squat", "plate-raise", "bw-deadbug", "bw-birddog", "bw-plank-tap", "bw-bridge", "bw-march", "mat-bridge", "vest-march", "ab-wall", "band-pallof", "med-deadbug", "ball-deadbug", "bench-plank", "bar-knee", "db-suitcase", "ab-hold", "ab-kneeling", "ab-diagonal", "kb-press", "rope-bounce"]
+        full: ["cable-row", "leg-press", "lat-pulldown", "smith-squat", "rower-stroke", "treadmill-walk", "bike-pedal", "plate-squat", "bench-push", "adjustable-bench-push", "rack-supported-squat", "bw-squat", "bw-wall-push", "bw-knee-push", "bw-reverse-lunge", "bw-bridge", "bw-deadbug", "bw-birddog", "bw-plank-tap", "bw-march", "barbell-deadlift", "sandbag-squat", "vest-march", "suspension-row", "step-up", "bw-bridge", "db-floor", "band-row", "kb-goblet", "bench-sit", "med-halo", "ball-wall-squat", "bar-hang", "rope-step", "ab-wall", "band-press", "db-rdl", "kb-row", "db-suitcase", "ab-hold", "band-pallof", "kb-deadlift"],
+        upper: ["cable-row", "cable-press", "lat-pulldown", "ez-curl", "plate-raise", "bench-push", "adjustable-bench-push", "bw-wall-push", "bw-knee-push", "bw-prone-y", "bw-plank-tap", "suspension-row", "barbell-row", "db-floor", "band-press", "band-row", "bench-push", "bar-hang", "med-halo", "ball-push", "kb-row", "db-row", "kb-press", "bar-scap", "ab-hold"],
+        lower: ["leg-press", "smith-squat", "rack-supported-squat", "treadmill-walk", "bike-pedal", "rower-stroke", "plate-squat", "bw-squat", "bw-reverse-lunge", "bw-bridge", "bw-calf", "bw-march", "barbell-deadlift", "sandbag-squat", "vest-march", "step-up", "bw-bridge", "kb-goblet", "db-rdl", "med-squat", "bench-sit", "ball-wall-squat", "rope-step", "band-squat", "kb-deadlift", "db-split", "rope-bounce"],
+        core: ["cable-press", "rower-stroke", "plate-squat", "plate-raise", "bw-deadbug", "bw-birddog", "bw-plank-tap", "bw-bridge", "bw-march", "bw-bridge", "vest-march", "ab-wall", "band-pallof", "med-deadbug", "ball-deadbug", "bench-plank", "bar-knee", "db-suitcase", "ab-hold", "ab-kneeling", "ab-diagonal", "kb-press", "rope-bounce"]
       };
       const goal = state.profile?.goal || "general";
       if ((state.programStyle === "strength" || goal === "strength") && focus === "full") priorities.full = ["barbell-deadlift", "kb-goblet", "db-rdl", "sandbag-squat", "db-floor", "suspension-row", "band-row", "kb-deadlift", "kb-row", "ab-hold"];
       if ((state.programStyle === "tone" || goal === "tone") && focus === "full") priorities.full = ["kb-goblet", "vest-march", "db-floor", "band-row", "db-rdl", "band-press", "ab-wall", "suspension-row", "kb-row"];
       if (state.programStyle === "hypertrophy" || goal === "muscle") {
-        if (focus === "full") priorities.full = ["barbell-deadlift", "flat-bench-push", "barbell-row", "smith-squat", "ez-curl", "cable-press", "cable-row", "db-floor", "kb-goblet", "leg-press", "lat-pulldown", "db-rdl", "kb-row", "db-row", "plate-raise", "bw-calf", "ab-hold"];
-        if (focus === "upper") priorities.upper = ["flat-bench-push", "barbell-row", "cable-press", "cable-row", "ez-curl", "db-floor", "lat-pulldown", "kb-press", "db-row", "band-press", "plate-raise", "ab-hold"];
+        if (focus === "full") priorities.full = ["barbell-deadlift", "bench-push", "barbell-row", "smith-squat", "ez-curl", "cable-press", "cable-row", "db-floor", "kb-goblet", "leg-press", "lat-pulldown", "db-rdl", "kb-row", "db-row", "plate-raise", "bw-calf", "ab-hold"];
+        if (focus === "upper") priorities.upper = ["bench-push", "barbell-row", "cable-press", "cable-row", "ez-curl", "db-floor", "lat-pulldown", "kb-press", "db-row", "band-press", "plate-raise", "ab-hold"];
         if (focus === "lower") priorities.lower = ["smith-squat", "leg-press", "barbell-deadlift", "db-rdl", "kb-goblet", "plate-squat", "bw-reverse-lunge", "bw-calf", "bw-bridge", "step-up"];
       }
-      if ((state.programStyle === "mobility" || goal === "mobility") && focus === "full") priorities.full = ["mat-bridge", "step-up", "band-squat", "band-row", "band-press", "band-pallof", "kb-deadlift", "ab-hold"];
-      if (state.programStyle === "core" || goal === "core") priorities.core = ["ab-wall", "mat-bridge", "band-pallof", "med-deadbug", "ball-deadbug", "bench-plank", "db-suitcase", "ab-hold"];
+      if ((state.programStyle === "mobility" || goal === "mobility") && focus === "full") priorities.full = ["bw-bridge", "step-up", "band-squat", "band-row", "band-press", "band-pallof", "kb-deadlift", "ab-hold"];
+      if (state.programStyle === "core" || goal === "core") priorities.core = ["ab-wall", "bw-bridge", "band-pallof", "med-deadbug", "ball-deadbug", "bench-plank", "db-suitcase", "ab-hold"];
       return priorities[focus];
     }
 
@@ -5418,9 +5542,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         </div>
         <div class="cue"><strong>Form cue:</strong> ${ex.cue}</div>
         <div class="warning"><strong>Easier option:</strong> ${ex.easier}</div>
+        <div class="v545-panel"><h3>Pinned note</h3><p>This note shows every time you open this exercise.</p><textarea id="v545-note-text" rows="3" aria-label="Pinned note for this exercise"></textarea><button class="secondary" type="button" id="v545-note-save">Save pinned note</button><p id="v545-note-status" role="status" aria-live="polite"></p></div>
+        <p id="v545-detail-progression"></p>
         ${progression ? `<div class="equipment-alternatives"><h3>Bodyweight progression</h3><p>${progression}</p><p>Move up only after you can finish the top of the rep range with steady form and no pain.</p></div>` : ""}
         <div class="equipment-alternatives"><h3>Equipment alternatives</h3><ul>${alternatives.map(item => `<li><strong>${item.name}</strong> — ${item.equipment}, ${item.dose}.</li>`).join("")}</ul><p>Choose the option you can set up safely; match the effort rather than trying to match the exact weight.</p></div>`;
       detailDialog.showModal();
+      if (typeof v545WireDetailNote === "function") v545WireDetailNote(ex);
       requestAnimationFrame(() => document.getElementById("detail-title").focus());
     }
 
@@ -6428,6 +6555,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         : `${ex.dose}. ${ex.steps.join(" ")} ${ex.cue} ${guidance.breathing}`;
       document.getElementById("session-swap").hidden = stage !== "workout";
       document.getElementById("workout-feedback").hidden = true;
+      if (typeof v545RenderSessionPanel === "function") v545RenderSessionPanel();
       // v5.38: "Up next" preview for the TV lean-back player.
       const upnext = document.getElementById("player-upnext");
       if (upnext) {
@@ -6816,6 +6944,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       const soreTrim = (!state.quickSession && state.sorenessLevel === "sore" && state.lastSorenessCheck === todayKey()) ? 1 : 0;
       state.playerTotalSets = Math.max(1, state.rounds - soreTrim);
       state.workoutStartedAt = Date.now();
+      state.sessionSets = [];
       requestWorkoutWakeLock();
       state.lastWorkoutSummary = "";
       state.savedSession = null;
@@ -7003,10 +7132,12 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
           durationSec: durationSec,
           title: String(title),
           exercises: exerciseCount,
-          quick: Boolean(state.quickSession)
+          quick: Boolean(state.quickSession),
+          sets: Array.isArray(state.sessionSets) ? state.sessionSets : []
         };
         state.workoutHistory.unshift(record);
-        if (state.workoutHistory.length > 100) state.workoutHistory.length = 100;
+        // v5.45: history is all-time — no trimming, no windowing.
+        state.sessionSets = [];
         saveAppState();
         renderWorkoutHistory();
         renderHeroStats();
@@ -7059,9 +7190,13 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         list.innerHTML = "<li>No workouts logged yet. Finish a workout and it will appear here.</li>";
         return;
       }
-      list.innerHTML = state.workoutHistory.map(h => {
+      const query = (state.historyFilter || "").toLowerCase();
+      const shown = state.workoutHistory.filter(h => !query || String(h.title || "").toLowerCase().includes(query));
+      if (!shown.length) { list.innerHTML = "<li>No workouts match that search. Clear the search to see all history.</li>"; return; }
+      list.innerHTML = shown.map(h => {
         const label = `${formatHistoryDate(h.date)}: ${h.title}, ${formatHistoryDuration(h.durationSec)}, ${h.exercises} exercises`;
-        return `<li>${label}</li>`;
+        const setDetail = Array.isArray(h.sets) && h.sets.length ? ` — ${h.sets.map(s => `${s.exerciseName || s.exerciseId} set ${s.setNumber} (${s.type}${s.weight ? `, ${s.weight}` : ""}${s.reps ? ` x ${s.reps}` : ""})`).join("; ")}` : "";
+        return `<li>${label}${setDetail}</li>`;
       }).join("");
     }
 
@@ -8319,6 +8454,253 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       } catch (error) { /* offline */ }
     }
 
+    // ---- v5.45: fast set logging, pinned notes, routines, graphs, measurements ----
+    // Original code only. No outside app code, artwork, or branding is used here.
+    function v545Esc(value) {
+      try { return escapeText(String(value == null ? "" : value)); } catch (error) { return String(value == null ? "" : value).replace(/[<>&"]/g, ""); }
+    }
+    function v545FindExercise(id) { return exercises.find(function (item) { return item.id === id; }) || null; }
+    function v545AllSets() {
+      var out = [];
+      (state.workoutHistory || []).forEach(function (h) {
+        (h.sets || []).forEach(function (s) { out.push(s); });
+      });
+      return out;
+    }
+    function v545PreviousLift(exerciseId) {
+      var sets = v545AllSets().filter(function (s) { return s.exerciseId === exerciseId; });
+      return sets.length ? sets[sets.length - 1] : null;
+    }
+    function v545DoseReps(exercise) {
+      var m = String(exercise && exercise.dose || "").match(/(\d+)/);
+      return m ? parseInt(m[1], 10) : null;
+    }
+    function v545ProgressionText(exercise) {
+      var prev = v545PreviousLift(exercise.id);
+      if (!prev) return "";
+      var dose = v545DoseReps(exercise);
+      if (dose && prev.reps && prev.reps < dose) return "Last time: " + prev.reps + " reps. Work up to " + dose + " reps before adding load.";
+      if (prev.weight) {
+        var bump = state.units === "metric" ? 1 : 2.5;
+        var next = Math.round((Number(prev.weight) + bump) * 10) / 10;
+        return "You hit the listed reps last time. Suggested next load: about " + next + (state.units === "metric" ? " kg" : " lb") + ".";
+      }
+      if (prev.reps) return "You hit the listed reps last time. Suggested next step: add 2 reps, or slow the lowering phase.";
+      return "";
+    }
+    function v545WarmupSets(weight) {
+      return [{ pct: 50, reps: 5 }, { pct: 70, reps: 3 }, { pct: 90, reps: 1 }].map(function (row) {
+        return { pct: row.pct, reps: row.reps, weight: Math.round((weight * row.pct / 100) * 2) / 2 };
+      });
+    }
+    function v545RenderWarmup(weight, target) {
+      var el = document.getElementById(target);
+      if (!el) return;
+      var w = Number(weight);
+      if (!Number.isFinite(w) || w <= 0) { el.textContent = "Enter a working weight above zero to see warm-up sets."; return; }
+      el.textContent = "Warm-up sets: " + v545WarmupSets(w).map(function (row) { return row.pct + "% — about " + row.weight + " for " + row.reps + " reps"; }).join("; ") + ". Then your working sets.";
+    }
+    function v545RenderSessionPanel() {
+      var panel = document.getElementById("v545-session-panel");
+      if (!panel) return;
+      var item = currentQueueItem();
+      if (!item || item.sessionStage !== "workout") { panel.hidden = true; return; }
+      panel.hidden = false;
+      var ex = item.exercise;
+      var prevEl = document.getElementById("v545-previous-lift");
+      var prev = v545PreviousLift(ex.id);
+      prevEl.textContent = prev
+        ? "Previous lift: " + (prev.weight ? prev.weight + " " : "") + (prev.reps ? "x " + prev.reps + " reps" : "") + " (" + prev.type + " set, " + formatHistoryDate(prev.date) + "). Beat it if form stays steady."
+        : "No previous logged set for this exercise yet. Log this set and it becomes your target next time.";
+      var noteEl = document.getElementById("v545-note-display");
+      var note = state.exerciseNotes && state.exerciseNotes[ex.id];
+      noteEl.textContent = note ? "Pinned note: " + note : "";
+      var progEl = document.getElementById("v545-progression-display");
+      progEl.textContent = v545ProgressionText(ex);
+      var listEl = document.getElementById("v545-session-sets");
+      var mine = (state.sessionSets || []).filter(function (s) { return s.exerciseId === ex.id; });
+      listEl.innerHTML = mine.length ? mine.map(function (s) { return "<li>Set " + s.setNumber + " (" + s.type + (s.superset ? ", superset" : "") + ")" + (s.weight ? " — " + s.weight : "") + (s.reps ? " x " + s.reps + " reps" : "") + "</li>"; }).join("") : "<li>No sets logged for this exercise yet in this session.</li>";
+      var repsInput = document.getElementById("v545-set-reps");
+      if (repsInput && !repsInput.value) { var dose = v545DoseReps(ex); if (dose) repsInput.value = dose; }
+      if (prev && prev.weight) { var wInput = document.getElementById("v545-set-weight"); if (wInput && !wInput.value) wInput.value = prev.weight; }
+    }
+    function v545CompleteSet() {
+      var item = currentQueueItem();
+      if (!item || item.sessionStage !== "workout") return;
+      var ex = item.exercise;
+      var typeEl = document.getElementById("v545-set-type");
+      var weightEl = document.getElementById("v545-set-weight");
+      var repsEl = document.getElementById("v545-set-reps");
+      var superEl = document.getElementById("v545-superset");
+      var reps = parseInt(repsEl ? repsEl.value : "", 10);
+      if (!Number.isInteger(reps) || reps < 1) {
+        var status = document.getElementById("v545-session-status");
+        if (status) status.textContent = "Enter at least 1 rep before completing the set.";
+        return;
+      }
+      if (!Array.isArray(state.sessionSets)) state.sessionSets = [];
+      state.sessionSets.push({
+        exerciseId: ex.id, exerciseName: ex.name, setNumber: state.playerSet,
+        type: typeEl ? typeEl.value : "normal", weight: weightEl && weightEl.value ? Number(weightEl.value) : null,
+        reps: reps, superset: Boolean(superEl && superEl.checked), date: Date.now()
+      });
+      var statusEl = document.getElementById("v545-session-status");
+      if (statusEl) statusEl.textContent = "Set " + state.playerSet + " logged for " + ex.name + ". Rest starts now.";
+      scheduleAppSave();
+      var hasAnotherSet = state.playerSet < state.playerTotalSets;
+      if (hasAnotherSet) { startSetRest(); return; }
+      var nextItem = state.sessionQueue[state.sessionQueueIndex + 1];
+      if (nextItem && nextItem.sessionStage === "workout") { startRest(); return; }
+      advanceQueue();
+    }
+    function v545WireDetailNote(ex) {
+      var textEl = document.getElementById("v545-note-text");
+      var saveEl = document.getElementById("v545-note-save");
+      var statusEl = document.getElementById("v545-note-status");
+      var progEl = document.getElementById("v545-detail-progression");
+      if (!textEl || !saveEl) return;
+      textEl.value = (state.exerciseNotes && state.exerciseNotes[ex.id]) || "";
+      if (progEl) progEl.textContent = v545ProgressionText(ex);
+      saveEl.onclick = function () {
+        if (!state.exerciseNotes) state.exerciseNotes = {};
+        state.exerciseNotes[ex.id] = textEl.value.trim();
+        scheduleAppSave();
+        if (statusEl) statusEl.textContent = "Pinned note saved. It will show every time you open " + ex.name + ".";
+      };
+    }
+    function v545RenderProgress() {
+      var textEl = document.getElementById("v545-progress-text");
+      var barsEl = document.getElementById("v545-progress-bars");
+      var bestEl = document.getElementById("v545-best-weights");
+      var suggEl = document.getElementById("v545-trainer-suggestions");
+      if (!textEl || !barsEl) return;
+      var sets = v545AllSets();
+      if (!sets.length) {
+        textEl.textContent = "Finish a workout with the new set logger and your graphs will appear here.";
+        barsEl.innerHTML = ""; if (bestEl) bestEl.innerHTML = "<li>No logged sets yet.</li>";
+        if (suggEl) suggEl.innerHTML = "<li>No trainer suggestions yet.</li>";
+        return;
+      }
+      var muscle = {}; var volume = 0; var best = {};
+      sets.forEach(function (s) {
+        var ex = v545FindExercise(s.exerciseId);
+        (ex ? ex.focus : ["full"]).forEach(function (f) { muscle[f] = (muscle[f] || 0) + 1; });
+        if (s.weight && s.reps) volume += Number(s.weight) * Number(s.reps);
+        if (s.weight && (!best[s.exerciseId] || Number(s.weight) > best[s.exerciseId].weight)) best[s.exerciseId] = { weight: Number(s.weight), name: s.exerciseName || s.exerciseId, date: s.date };
+      });
+      var total = sets.length;
+      var max = Math.max.apply(null, Object.keys(muscle).map(function (k) { return muscle[k]; }));
+      textEl.textContent = total + " sets logged in history. Total logged volume: " + Math.round(volume) + ". Sets are counted per muscle focus below, as text and as bars.";
+      barsEl.innerHTML = Object.keys(muscle).sort(function (a, b) { return muscle[b] - muscle[a]; }).map(function (f) {
+        var pct = max ? Math.round(muscle[f] / max * 100) : 0;
+        return "<p>" + v545Esc(f) + ": " + muscle[f] + " sets</p><div class=\"v545-bar\" style=\"width:" + pct + "%\" role=\"img\" aria-label=\"" + v545Esc(f) + ", " + muscle[f] + " sets\"></div>";
+      }).join("");
+      if (bestEl) bestEl.innerHTML = Object.keys(best).map(function (id) { return "<li>" + v545Esc(best[id].name) + ": best logged weight " + best[id].weight + " (" + formatHistoryDate(best[id].date) + ").</li>"; }).join("") || "<li>No weighted sets logged yet.</li>";
+      if (suggEl) {
+        var sugg = exercises.map(function (ex) { return v545ProgressionText(ex) ? ex.name + " — " + v545ProgressionText(ex) : ""; }).filter(Boolean).slice(0, 10);
+        suggEl.innerHTML = sugg.length ? sugg.map(function (s) { return "<li>" + v545Esc(s) + "</li>"; }).join("") : "<li>No trainer suggestions yet. Log a set at the top of its listed reps to get one.</li>";
+      }
+    }
+    function v545RenderRoutines() {
+      var listEl = document.getElementById("v545-routine-list");
+      var calEl = document.getElementById("v545-calendar");
+      if (listEl) {
+        listEl.innerHTML = (state.routines || []).length ? state.routines.map(function (r, idx) {
+          return "<li><strong>" + v545Esc(r.name) + "</strong> — " + (r.moves || []).length + " exercises. <button type=\"button\" data-routine-run=\"" + idx + "\">Run routine</button> <button type=\"button\" data-routine-del=\"" + idx + "\">Delete</button></li>";
+        }).join("") : "<li>No routines saved yet. Build a workout, name it above, and save it.</li>";
+        listEl.querySelectorAll("[data-routine-run]").forEach(function (btn) { btn.addEventListener("click", function () {
+          var r = state.routines[Number(btn.dataset.routineRun)]; if (!r) return;
+          state.workout = (r.moves || []).map(function (id) { return v545FindExercise(id); }).filter(Boolean);
+          if (!state.workout.length) return;
+          state.quickSession = false; state.activeWorkoutLabel = r.name; state.rounds = 3;
+          beginSession({ replacements: [], removed: 0 });
+        }); });
+        listEl.querySelectorAll("[data-routine-del]").forEach(function (btn) { btn.addEventListener("click", function () {
+          state.routines.splice(Number(btn.dataset.routineDel), 1); scheduleAppSave(); v545RenderRoutines();
+        }); });
+      }
+      if (calEl) {
+        calEl.innerHTML = (state.workoutHistory || []).length ? state.workoutHistory.map(function (h) {
+          return "<li>" + formatHistoryDate(h.date) + ": " + v545Esc(h.title) + ", " + formatHistoryDuration(h.durationSec) + ", " + h.exercises + " exercises.</li>";
+        }).join("") : "<li>No completed workouts yet.</li>";
+      }
+    }
+    function v545RenderMeasurements() {
+      var listEl = document.getElementById("v545-measure-list");
+      if (!listEl) return;
+      listEl.innerHTML = (state.measurements || []).length ? state.measurements.map(function (m) {
+        var parts = [];
+        ["weight", "waist", "chest", "arms", "thighs", "hips", "neck"].forEach(function (k) { if (m[k] != null && m[k] !== "") parts.push(k + " " + m[k]); });
+        return "<li>" + v545Esc(m.date || "") + ": " + parts.join(", ") + "</li>";
+      }).join("") : "<li>No measurements saved yet.</li>";
+    }
+    function v545WireControls() {
+      var completeBtn = document.getElementById("v545-complete-set");
+      if (completeBtn && !completeBtn.dataset.wired) { completeBtn.dataset.wired = "1"; completeBtn.addEventListener("click", v545CompleteSet); }
+      var warmBtn = document.getElementById("v545-warmup-from-session");
+      if (warmBtn && !warmBtn.dataset.wired) { warmBtn.dataset.wired = "1"; warmBtn.addEventListener("click", function () {
+        var w = document.getElementById("v545-set-weight");
+        var status = document.getElementById("v545-session-status");
+        if (status) { var val = w ? Number(w.value) : NaN; status.textContent = Number.isFinite(val) && val > 0 ? "Warm-up sets: " + v545WarmupSets(val).map(function (row) { return row.pct + "% — about " + row.weight + " for " + row.reps + " reps"; }).join("; ") + "." : "Enter a working weight first to see warm-up sets."; }
+      }); }
+      var calcBtn = document.getElementById("v545-warmup-calc");
+      if (calcBtn && !calcBtn.dataset.wired) { calcBtn.dataset.wired = "1"; calcBtn.addEventListener("click", function () {
+        v545RenderWarmup(document.getElementById("v545-warmup-weight") ? document.getElementById("v545-warmup-weight").value : "", "v545-warmup-result");
+      }); }
+      var saveRoutineBtn = document.getElementById("v545-save-routine");
+      if (saveRoutineBtn && !saveRoutineBtn.dataset.wired) { saveRoutineBtn.dataset.wired = "1"; saveRoutineBtn.addEventListener("click", function () {
+        var nameEl = document.getElementById("v545-routine-name"); var status = document.getElementById("v545-routine-status");
+        var name = nameEl ? nameEl.value.trim() : "";
+        var moves = (state.workout || []).map(function (ex) { return ex.id; });
+        if (!name || !moves.length) { if (status) status.textContent = "Name the routine and build a workout first."; return; }
+        if (!Array.isArray(state.routines)) state.routines = [];
+        state.routines.push({ name: name, moves: moves, savedAt: Date.now() });
+        scheduleAppSave(); v545RenderRoutines();
+        if (status) status.textContent = "Routine saved: " + name + " (" + moves.length + " exercises).";
+      }); }
+      var addCustomBtn = document.getElementById("v545-add-custom");
+      if (addCustomBtn && !addCustomBtn.dataset.wired) { addCustomBtn.dataset.wired = "1"; addCustomBtn.addEventListener("click", function () {
+        var nameEl = document.getElementById("v545-custom-name"); var status = document.getElementById("v545-custom-status");
+        var name = nameEl ? nameEl.value.trim() : "";
+        if (!name) { if (status) status.textContent = "Give the custom exercise a name first."; return; }
+        var stepsEl = document.getElementById("v545-custom-steps");
+        var steps = stepsEl ? stepsEl.value.split("\n").map(function (s) { return s.trim(); }).filter(Boolean) : [];
+        var custom = {
+          id: "custom-" + Date.now(), name: name,
+          equipment: document.getElementById("v545-custom-equipment") ? document.getElementById("v545-custom-equipment").value : "No equipment",
+          focus: [document.getElementById("v545-custom-focus") ? document.getElementById("v545-custom-focus").value : "full"],
+          level: "Beginner", dose: "10 reps", summary: "Custom exercise added by you.",
+          steps: steps.length ? steps : ["Follow safe form and stop if form changes."],
+          cue: "Keep form steady from first rep to last.", easier: "Use a smaller range or lighter load."
+        };
+        if (!Array.isArray(state.customExercises)) state.customExercises = [];
+        state.customExercises.push(custom); exercises.push(custom);
+        scheduleAppSave(); renderLibrary(state.libraryFilter);
+        if (status) status.textContent = "Custom exercise added: " + name + ".";
+      }); }
+      var addMeasureBtn = document.getElementById("v545-add-measure");
+      if (addMeasureBtn && !addMeasureBtn.dataset.wired) { addMeasureBtn.dataset.wired = "1"; addMeasureBtn.addEventListener("click", function () {
+        var get = function (id) { var el = document.getElementById(id); return el && el.value !== "" ? Number(el.value) : null; };
+        var dateEl = document.getElementById("v545-measure-date");
+        var entry = { date: dateEl && dateEl.value ? dateEl.value : todayKey(), weight: get("v545-measure-weight"), waist: get("v545-measure-waist"), chest: get("v545-measure-chest"), arms: get("v545-measure-arms"), thighs: get("v545-measure-thighs"), hips: get("v545-measure-hips"), neck: get("v545-measure-neck") };
+        if (!Array.isArray(state.measurements)) state.measurements = [];
+        state.measurements.unshift(entry); scheduleAppSave(); v545RenderMeasurements();
+        var status = document.getElementById("v545-measure-status"); if (status) status.textContent = "Measurement saved for " + entry.date + ".";
+      }); }
+      var searchEl = document.getElementById("v545-history-search");
+      if (searchEl && !searchEl.dataset.wired) { searchEl.dataset.wired = "1"; searchEl.addEventListener("input", function () { state.historyFilter = searchEl.value; renderWorkoutHistory(); }); }
+      var oneRepForm = document.getElementById("one-rep-form");
+      if (oneRepForm && !oneRepForm.dataset.v545wired) {
+        oneRepForm.dataset.v545wired = "1";
+        oneRepForm.addEventListener("submit", function () { setTimeout(v545RenderProgress, 0); });
+      }
+    }
+    function v545Init() {
+      v545WireControls(); v545RenderProgress(); v545RenderRoutines(); v545RenderMeasurements();
+      var origRenderHistory = renderWorkoutHistory;
+      renderWorkoutHistory = function () { origRenderHistory(); v545RenderProgress(); v545RenderRoutines(); };
+    }
+
     prepareAccessibleOptions();
     const restoredSession = restoreAppState();
     migrateRestDaysIntoState();
@@ -8333,6 +8715,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     renderHeroCoach();
     renderHeroStats();
     renderLibrary();
+    v545Init();
     if (restoredSession) {
       renderRestoredSession();
     } else {
